@@ -1,0 +1,4 @@
+Style: flat 1960s Zagreb Film hand-drawn cartoon, the Professor Balthazar look (thick black outlines, flat muted colours, simple round faces).
+Data: 23 frames extracted and cleaned from three Zagreb Film cartoon episodes on YouTube, captioned with a vision model.
+Checkpoint: final 2,000-step checkpoint (baltazar-style-lora.safetensors), rank-32 LoRA on FLUX 3 Image Klein Base, trigger 'bltzr style'.
+LoRA: https://huggingface.co/jurecerkez/baltazar-style-lora
