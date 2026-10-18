@@ -4,6 +4,8 @@ Little Big Questions helps kids make sense of the big, sometimes scary things ha
 
 The show lives in a cozy 90s kid's bedroom you can explore in the browser. Switch on the old CRT and Olive the owl presents the day's news: each story answers one question a kid might ask, in four short illustrated steps. The stories are today's real news. An agent finds them, rewrites them for kids, draws and animates them, and narrates them.
 
+**▶ See it live:** http://n403p14bd4x9mlhtimgg4yad.159.69.45.13.sslip.io/
+
 **What we used**
 
 - **Blender, driven by Claude Code over MCP**, to rebuild the bedroom from a single AI-generated reference image, then exported to glTF
