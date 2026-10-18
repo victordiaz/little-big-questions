@@ -24,11 +24,11 @@ The logo, the presenter and the show each started as a small experiment under `/
     <th width="50%">▶ The film</th>
   </tr>
   <tr>
-    <td><img src="docs/images/app-overview.jpg" alt="The app: overview of the 3D bedroom"></td>
+    <td><img src="docs/images/app-demo.gif" alt="The app: the camera leaves the isometric view of the bedroom, passes the posters, sits down at the TV, and Olive the owl presents the news"></td>
     <td><a href="bfl-challenge/film.mp4"><img src="docs/images/film-poster.jpg" alt="A still from the film, in the Balthazar style. Click to watch."></a></td>
   </tr>
   <tr>
-    <td>The React + three.js app: the bedroom rebuilt in Blender, with Olive's show on the CRT.</td>
+    <td>The React + three.js app. Press <b>Watch TV</b>: the camera leaves the isometric view, passes the team and partner posters, sits down at the CRT, and Olive the owl presents the news.</td>
     <td><a href="bfl-challenge/film.mp4"><b>Watch "Why are Ukraine and Russia fighting?"</b></a> (61 seconds), our entry for the Black Forest Labs challenge <i>Train a Style, Tell a Story</i>, drawn in a 1960s Zagreb Film cartoon style from a LoRA we trained on FLUX 3 Klein. Details in <a href="#bfl-challenge-train-a-style-tell-a-story">BFL Challenge</a>.</td>
   </tr>
 </table>
