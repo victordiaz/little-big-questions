@@ -7,7 +7,5 @@ dist/
 .env
 __pycache__/
 .voices/
-# Generated news: the working folder and what news_publish.py puts in the app
-news/
-room-viewer/public/news/
-room-viewer/src/labs/news.json
+# Backups made while regenerating news stories
+news/**/backup-*/

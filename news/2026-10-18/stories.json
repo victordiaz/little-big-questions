@@ -1,0 +1,63 @@
+[
+  {
+    "id": "why-are-ukraine-and-russia-fighting",
+    "title": "Why Are Ukraine and Russia Fighting?",
+    "question": "Why are Ukraine and Russia fighting?",
+    "news": {
+      "title": "Ukraine launches more than 1,000 drones at Russia, striking oil terminal in St. Petersburg",
+      "summary": "Ukraine carried out a large-scale drone attack on Russia, with over 1,000 drones hitting targets including an oil terminal in St. Petersburg and causing fires. President Zelenskyy said Russia struck Ukraine with nearly 2,700 drones, 1,700 aerial bombs, and 66 missiles over the past week, mainly targeting energy facilities in an attempt to cause blackouts. The attack comes as the United States weighs further sanctions on Russia.",
+      "why_it_matters": "The strike marks a significant escalation in the Russia-Ukraine war with direct implications for global energy markets and international diplomatic efforts to end the conflict.",
+      "sources": [
+        "https://abcnews.com/International/ukraine-targets-russia-1000-drones-striking-oil-terminal/story?id=137358203"
+      ]
+    },
+    "steps": [
+      {
+        "narration": "Two countries, Ukraine and Russia, have been fighting for a long time. A drone is a small flying robot with no person inside. Ukraine sent many drones toward Russia. One struck an oil terminal, a place that stores fuel, and a fire started.",
+        "image_prompt": "A small round blue robot stands on a hill looking at a distant industrial building with barrels. Several small cartoon flying machines are in the sky. A faint wisp of smoke rises from the building. Generic cartoon houses with different colored roofs are nearby. No words or letters.",
+        "motion": "The camera slowly pushes in toward the distant building as clouds drift across the sky.",
+        "image": "news/2026-10-18/why-are-ukraine-and-russia-fighting/step-1.jpg",
+        "video": "news/2026-10-18/why-are-ukraine-and-russia-fighting/clip-1.mp4",
+        "voice": "news/2026-10-18/why-are-ukraine-and-russia-fighting/voice-1.wav",
+        "voice_text": "Two countries, Ukraine and Russia, have been fighting for a long time. A drone is a small flying robot with no person inside. Ukraine sent many drones toward Russia. One struck an oil terminal, a place that stores fuel, and a fire started.",
+        "voice_seconds": 16.44
+      },
+      {
+        "narration": "Russia also sent many drones, bombs, and missiles at Ukraine last week. They aimed at energy centers that make electricity for homes and schools. If those centers break, the lights can go out. That is called a blackout.",
+        "image_prompt": "A small round blue robot stands in a neighborhood where some houses have dark windows and some have lights on. Cartoon power lines and a substation are in the background. Generic cartoon people look out their windows. No words or letters.",
+        "motion": "Lights in the houses gently flicker on and off as the robot turns its head.",
+        "image": "news/2026-10-18/why-are-ukraine-and-russia-fighting/step-2.jpg",
+        "video": "news/2026-10-18/why-are-ukraine-and-russia-fighting/clip-2.mp4",
+        "voice": "news/2026-10-18/why-are-ukraine-and-russia-fighting/voice-2.wav",
+        "voice_text": "Russia also sent many drones, bombs, and missiles at Ukraine last week. They aimed at energy centers that make electricity for homes and schools. If those centers break, the lights can go out. That is called a blackout.",
+        "voice_seconds": 13.12
+      },
+      {
+        "narration": "People see the fighting in different ways. Ukraine says it is defending its home. Russia says it is protecting its own land. Leaders in other countries, like the United States, are discussing sanctions, which are rules that make it harder to buy and sell things.",
+        "image_prompt": "A small round blue robot sits at a round table with two generic cartoon animals. Papers and coins are on the table. The robot looks back and forth between them. No words or letters.",
+        "motion": "The papers on the table flutter slightly as the characters nod to each other.",
+        "image": "news/2026-10-18/why-are-ukraine-and-russia-fighting/step-3.jpg",
+        "video": "news/2026-10-18/why-are-ukraine-and-russia-fighting/clip-3.mp4",
+        "voice": "news/2026-10-18/why-are-ukraine-and-russia-fighting/voice-3.wav",
+        "voice_text": "People see the fighting in different ways. Ukraine says it is defending its home. Russia says it is protecting its own land. Leaders in other countries, like the United States, are discussing sanctions, which are rules that make it harder to buy and sell things.",
+        "voice_seconds": 15.84
+      },
+      {
+        "narration": "Helpers and leaders are working to keep people safe and find a way to stop the fighting. It is complicated, and the war is not over yet. What do you think could help people get along again?",
+        "image_prompt": "A small round blue robot stands with a group of generic cartoon people and animals handing out blankets and flashlights. A sun rises in the background. No words or letters.",
+        "motion": "The robot waves as the group walks slowly toward the rising sun.",
+        "image": "news/2026-10-18/why-are-ukraine-and-russia-fighting/step-4.jpg",
+        "video": "news/2026-10-18/why-are-ukraine-and-russia-fighting/clip-4.mp4",
+        "voice": "news/2026-10-18/why-are-ukraine-and-russia-fighting/voice-4.wav",
+        "voice_text": "Helpers and leaders are working to keep people safe and find a way to stop the fighting. It is complicated, and the war is not over yet. What do you think could help people get along again?",
+        "voice_seconds": 9.32
+      }
+    ],
+    "video": "news/2026-10-18/why-are-ukraine-and-russia-fighting/why-are-ukraine-and-russia-fighting.mp4",
+    "topic": "War",
+    "mood": "gentle",
+    "accent": "#8fa8ff",
+    "intro": "This can feel scary, so let's go slowly. Two countries, Ukraine and Russia, are fighting—and we're wondering why.",
+    "outro": "People see this differently, and many grown-ups are working to keep everyone safe. If you feel worried, talking to a grown-up you trust can help—what do you think could help people get along again?"
+  }
+]
