@@ -4,6 +4,8 @@ A cozy 90s gamer bedroom, rebuilt in Blender from a single AI-generated referenc
 
 ![The app: overview](docs/images/app-overview.jpg)
 
+The bedroom is also the set for **Little Big Questions**, a news show that helps kids make sense of the big, sometimes scary things happening in the world (elections, wars, climate, inequality) with friendly cartoon stories that are honest without being frightening. Its logo, its presenter and the show itself were worked out as small experiments under `/labs`, and now play on the bedroom's CRT.
+
 This README walks through how we got here, step by step.
 
 ## Contents
@@ -17,9 +19,13 @@ This README walks through how we got here, step by step.
 7. [Step 6: the React + three.js viewer](#step-6-the-react--threejs-viewer)
 8. [Step 7: matching Blender's lighting](#step-7-matching-blenders-lighting)
 9. [Step 8: the TV, camera shots and the CRT effect](#step-8-the-tv-camera-shots-and-the-crt-effect)
-10. [Project layout](#project-layout)
-11. [Running and regenerating](#running-and-regenerating)
-12. [Credits](#credits)
+10. [Step 9: Little Big Questions and the labs](#step-9-little-big-questions-and-the-labs)
+11. [Step 10: the logo, the intro and the outro](#step-10-the-logo-the-intro-and-the-outro)
+12. [Step 11: Olive, the presenter](#step-11-olive-the-presenter)
+13. [Step 12: the show on the bedroom TV](#step-12-the-show-on-the-bedroom-tv)
+14. [Project layout](#project-layout)
+15. [Running and regenerating](#running-and-regenerating)
+16. [Credits](#credits)
 
 ## The pipeline at a glance
 
@@ -224,7 +230,7 @@ sequenceDiagram
     TV-->>TV: play video, power-on animation, thump + static
 ```
 
-If another shot is chosen mid-flight, a run counter discards the stale promise so the TV doesn't switch on unexpectedly.
+If another shot is chosen mid-flight, a run counter discards the stale promise so the TV doesn't switch on unexpectedly. Since [step 12](#step-12-the-show-on-the-bedroom-tv), Watch TV also turns the sound on and opens the Little Big Questions programme instead of the video.
 
 ### This README, inside the app
 
@@ -232,7 +238,7 @@ The **i** button in the top-right corner opens this same `README.md` in a full-s
 
 ### Switching on and off
 
-Clicking the TV (or the HUD button) toggles it. The LED turns green or red right away, while a `power` value animates between 0 and 1: 0.75 s to switch on, 0.45 s to switch off. That value drives the shader and the TV's glow on the room.
+Clicking the TV (or the power button in the TV panel) toggles it. The app opens with the set off. The LED turns green or red right away, while a `power` value animates between 0 and 1: 0.75 s to switch on, 0.45 s to switch off. That value drives the shader and the TV's glow on the room.
 
 ```mermaid
 stateDiagram-v2
@@ -261,6 +267,102 @@ stateDiagram-v2
 
 With sound on, `crtSound.js` synthesizes the power sounds with Web Audio: a low thump and static when switching on, a falling zap when switching off.
 
+## Step 9: Little Big Questions and the labs
+
+`/labs` is a page of small experiments for the show, each one an entry that leads to its own page. There are two so far, **Logo** and **Presenter**. Adding one is a page component plus a row in `EXPERIMENTS` in `src/labs/Labs.jsx`.
+
+There is no router library: `main.jsx` looks at the path and lazy-loads either the bedroom or the labs, so the labs pages don't download three.js and the bedroom doesn't download the labs.
+
+Every experiment starts with FLUX concepts next to things built in code. The prompts live in one file, `labs_prompts/prompts.tsv` (`<experiment>/<id>`, aspect ratio, prompt), and `labs_prompts/generate.sh` runs them through `flux_image.py`, six at a time, into `room-viewer/src/labs/assets/<experiment>/<id>/`. The pages pick the images up with `import.meta.glob`, show each with its prompt, and keep older versions when a prompt is run again. The first batch was 16 images: six logo directions, and four presenter characters, each as a character sheet and at a news desk, plus an empty studio plate and the show on a 90s CRT.
+
+![Four presenters from FLUX: Olive the owl, Pip the TV-robot, Remy the fox, Quill the question](docs/images/presenter-cast.jpg)
+
+## Step 10: the logo, the intro and the outro
+
+The strongest FLUX direction was a coral question mark whose dot is a smiling Earth. It was redrawn as SVG (`src/labs/brand.jsx`) so it scales and animates: the globe's continents are a strip that slides behind a circular clip, which reads as the planet turning, and its eyes blink.
+
+**The intro** is a five-second news-programme opener in pure CSS animation, timed with delays: the camera starts tight on the globe and pulls back, an orbit ring draws around it, the question mark draws itself, "BIG" slams in with a flash and a shake, "Questions" hops in letter by letter, and the tagline fades up. **The outro** closes the show with the same background: "That's all for today!", the stacked logo, "Keep asking little big questions", and Olive peeking up from the corner to wave. Both come in three looks (Studio, Daylight, Pixel CRT) and replay by remounting with a new React key. Both play a four-second orchestral jingle, which ends just as the intro's tagline lands.
+
+**Lockups.** One `<Lockup>` component draws the four layouts the show needs (stacked, horizontal, one line, mark only) in four tones (colour, reversed on navy, one colour, white), all scaled from a single size. The Logo page also shows clear space, the smallest sizes (below 32 px the globe drops its face and stops turning), and the logo in use: a corner bug over video in any corner, a lower third, an end card, a thumbnail, a browser tab and avatars, and stickers.
+
+![The outro and the lockups](docs/images/labs-logo.jpg)
+
+## Step 11: Olive, the presenter
+
+Of the four FLUX presenters, **Olive the owl** was the one coded: an SVG character (`src/labs/Olive.jsx`) who blinks, bobs, moves her beak while talking, glances at the story screen, and changes expression with the story. Hard topics such as war get softer brows lifted in the middle and a small head tilt, concerned and never frightened. While explaining, she raises a wing towards the screen.
+
+She is drawn for desk framing. The first version was a full owl behind a desk, and it broke in several places: the desk only hid her bottom tenth, so her belly showed as an egg-shaped second face, one wing was hidden behind her body, and her hands hung below the desk line. The redraw ends exactly at the desk's front edge, with her wing tips resting on it. Olive and the desk now sit in one anchored box so they always move together, her speech bubble points at her beak, and the question banner moved to the right so it no longer covers the desk logo.
+
+![The studio, and the same set at 4:3 on a CRT](docs/images/presenter-studio.jpg)
+
+**The show** (`src/labs/show.jsx`) is a rundown of stories, each a single question, in `src/labs/stories.json`. Every story runs three segments:
+
+```mermaid
+flowchart LR
+    intro["Intro<br/>Olive asks the question at the desk"] --> video["Story video<br/>fills the screen, Olive in a corner bubble"]
+    video --> outro["Wrap-up<br/>people see it differently,<br/>a question back to the viewer"]
+    outro -->|"next story"| intro
+    outro -->|"after the last story"| closing["Outro"]
+```
+
+Everything inside the studio is sized in container units, so the same set works at 16:9 on the labs page and at 4:3 on the TV.
+
+**Her voice.** `labs_prompts/presenter_voice.py` voices each intro and wrap-up line with [Chatterbox](https://github.com/resemble-ai/chatterbox) running locally, cloning the sample clip of a Fish Audio voice ("kids"). The sample's link is signed for an hour, so the script fetches a fresh one from the Fish Audio API on every run. It writes one wav per line to `public/voices/olive/` and records each line's text and length in `src/labs/olive-voice.json`. A line is redone only when its text changes, and a line edited after it was recorded stays silent until it is voiced again. On a Mac's CPU each line takes 20 to 80 seconds.
+
+During playback the bubble text follows the audio and the beak moves while it plays. If the browser blocks audio, the line types out at speaking pace instead. One bug is worth recording: React StrictMode starts each effect twice in development, so the first attempt to play was aborted, and its fallback started a typing timer that was never stopped. That stale timer kept writing the previous line into the bubble, which flickered empty several times a second. Now nothing from a cancelled line can touch the bubble.
+
+## Step 12: the show on the bedroom TV
+
+The labs pages play live on the bedroom's CRT: the intro, the show and the outro are real React DOM laid onto the screen in 3D, not a video or a texture.
+
+```mermaid
+flowchart LR
+    App["App.jsx<br/>channel, show state"] -->|"createPortal"| el["a plain &lt;div&gt;<br/>Intro · Newsroom · Outro"]
+    el --> Feed["TVFeed (Room.jsx)<br/>CSS3DObject on the screen"]
+    Feed --> R["CSS3DRenderer<br/>drawn over the WebGL canvas"]
+    Feed --> Glass["screen material → dark glass<br/>TV glow light follows power"]
+```
+
+`App` renders the current programme into a plain `<div>` through a React portal. `TVFeed` measures the screen mesh, places that `<div>` on the glass as a `CSS3DObject`, and draws it with three's `CSS3DRenderer`, which re-applies a CSS 3D transform every frame so the page stays glued to the screen as the camera moves. The screen's own material becomes dark glass, so the tube shows black when the picture collapses.
+
+Two dead ends came first. drei's `<Html transform>` mounted an empty box, because it creates a second React root inside the three.js renderer and React 19 StrictMode unmounted it mid-render. And the first `CSS3DObject` version vanished whenever the channel changed, because StrictMode's test unmount removed it from the scene and it was only ever added once.
+
+Since the picture is HTML rather than a texture, the CRT shader can't reach it, so the CRT look is redone in CSS (`.tv-feed` in `styles.css`): scanlines, glass glare, darker curved edges, a slight flicker, the dot → line → picture power animation, and a burst of static on every channel change except the outro, which cuts in clean. The trade-off is that the page always draws on top of the 3D scene, which is fine for the current camera shots.
+
+**The TV panel** (top right, `src/TVControls.jsx`) is the remote control:
+
+| Control | What it does | Key |
+|---|---|---|
+| Power, Sound | switch the set on or off, and mute or unmute, each labelled with its state | |
+| Watch TV | fly to the TV and start the programme | |
+| Video · Logo intro · News show · Outro | change channel | `1`–`4` |
+| Look, Replay | pick the intro and outro look, and replay them with the jingle | `R` |
+| Story, Segment | jump to any story or segment | |
+| Prev, Running, Next | step through the show, or pause and resume it | `←` `→` space |
+
+`?channel=logo`, `?channel=show` or `?channel=outro` opens the app on that channel.
+
+**Watch TV** now opens the whole programme:
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant App
+    participant Rig as CameraRig
+    participant TV as TVFeed
+    User->>App: click "Watch TV"
+    App->>App: sound on, channel = Logo intro
+    App->>Rig: shot = "watchTV"
+    Rig->>App: TV off, fly in, TV on
+    App->>TV: logo intro + jingle (6 s)
+    App->>TV: News show, story 1 to 4<br/>(Olive's voice, story videos)
+    App->>TV: Outro + jingle, no static
+```
+
+The intro waits until the set is actually on, so it isn't missed during the camera move. If the camera is already at the TV, it starts right away, and picking another channel or shot cancels the hand-over to the show.
+
+![The programme on the bedroom TV](docs/images/tv-programme.jpg)
+
 ## Project layout
 
 ```
@@ -268,6 +370,10 @@ With sound on, `crtSound.js` synthesizes the power sounds with Web Audio: a low 
 ├── README.md
 ├── flux_image.py            # FLUX 3 Image CLI (generate, or edit with --image)
 ├── room_helpers.py          # bpy helpers used by every Blender snippet
+├── labs_prompts/
+│   ├── prompts.tsv          # FLUX prompts for the labs concepts
+│   ├── generate.sh          # runs them through flux_image.py
+│   └── presenter_voice.py   # voices Olive's lines with Chatterbox
 ├── retro_bedroom.blend      # the Blender scene
 ├── renders/room_iso.png     # EEVEE render
 ├── images/
@@ -277,13 +383,32 @@ With sound on, `crtSound.js` synthesizes the power sounds with Web Audio: a low 
 └── room-viewer/             # React + three.js app
     ├── public/models/retro_bedroom.glb
     ├── public/videos/big-buck-bunny.mp4
+    ├── public/audio/intro-jingle.mp3
+    ├── public/voices/olive/ # Olive's recorded lines
     └── src/
-        ├── App.jsx          # state, HUD, lights, post-processing
-        ├── Room.jsx         # model, TV click, LED, video + power animation
+        ├── main.jsx         # picks the bedroom or /labs from the path
+        ├── App.jsx          # state, channels, the Watch TV programme, lights
+        ├── Room.jsx         # model, TV click, LED, video, TVFeed (HTML on the screen)
+        ├── TVControls.jsx   # the TV panel
         ├── CameraRig.jsx    # camera shots and the Watch TV sequence
         ├── crtMaterial.js   # CRT shader
         ├── crtSound.js      # synthesized power sounds
-        └── InfoPanel.jsx    # renders this README inside the app
+        ├── InfoPanel.jsx    # renders this README inside the app
+        └── labs/
+            ├── Labs.jsx         # /labs index and the EXPERIMENTS list
+            ├── LogoLab.jsx      # /labs/logo
+            ├── PresenterLab.jsx # /labs/presenter
+            ├── brand.jsx        # globe, logo mark, wordmark, Lockup
+            ├── Lockups.jsx      # lockup matrix and logo-in-use scenes
+            ├── intro.jsx        # the logo intro and the outro
+            ├── sting.js         # plays the jingle
+            ├── Olive.jsx        # the presenter
+            ├── show.jsx         # rundown, Newsroom, voice playback
+            ├── stories.json     # the stories and Olive's lines
+            ├── olive-voice.json # which lines are voiced
+            ├── FluxGallery.jsx  # FLUX concepts with their prompts
+            ├── assets/          # generated FLUX concepts
+            └── labs.css
 ```
 
 ## Running and regenerating
@@ -295,6 +420,8 @@ cd room-viewer
 npm install
 npm run dev
 ```
+
+Open `http://localhost:5173/` for the bedroom (press **Watch TV**) and `http://localhost:5173/labs` for the experiments.
 
 **Images.** Set `BFL_API_KEY`, then:
 
@@ -308,6 +435,21 @@ uv run flux_image.py \
   "Pixel art poster in the style of <ref_image_1> with the logo from <ref_image_0>" \
   --image images/refs/logo.jpg --image images/room/poster_rocket/….png \
   --aspect-ratio 3:4 --out images/room/poster_y
+```
+
+**Labs concepts.** Add or edit a line in `labs_prompts/prompts.tsv`, then run the whole list, or only the ids that match a filter:
+
+```sh
+bash labs_prompts/generate.sh                    # everything
+bash labs_prompts/generate.sh presenter/owl      # one experiment or concept
+```
+
+**Olive's voice.** Start Chatterbox (`uv run scripts/chatterbox-server.py` in the voice lab project, on `localhost:8004`), set `FISH_API_KEY`, then:
+
+```sh
+uv run labs_prompts/presenter_voice.py                       # only new or changed lines
+uv run labs_prompts/presenter_voice.py --only war-intro --force
+uv run labs_prompts/presenter_voice.py --model multilingual --exaggeration 0.7
 ```
 
 **Model.** Edit the scene in Blender, then re-export with the same settings (run inside Blender):
@@ -326,4 +468,7 @@ bpy.ops.export_scene.gltf(
 - **Big Buck Bunny** © Blender Foundation, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), from [peach.blender.org](https://peach.blender.org/).
 - **DGX Spark** product photos from the [PNY press image kit](https://www.pny.com/company/press-center/press-images/nvidia-dgx-spark).
 - **Logos** from [Dashboard Icons](https://dashboardicons.com/) and [LobeHub Icons](https://lobehub.com/icons). NVIDIA, DGX Spark, Nebius and Black Forest Labs are trademarks of their respective owners and are used here for a personal, non-commercial scene.
-- **Posters and textures** generated with [FLUX 3 Image](https://docs.bfl.ai/) by Black Forest Labs.
+- **Posters, textures and labs concepts** generated with [FLUX 3 Image](https://docs.bfl.ai/) by Black Forest Labs.
+- **Jingle**: "Positive Orchestral Jingle" by sergequadrado, [Freesound #455606](https://freesound.org/s/455606/).
+- **Olive's voice** made with [Chatterbox](https://github.com/resemble-ai/chatterbox) by Resemble AI, cloned from the sample of the [Fish Audio voice "kids"](https://fish.audio/m/7c9a5cb2f8914bd1963d4237e540c036/).
+- **Fonts**: [Fredoka](https://fonts.google.com/specimen/Fredoka), [Nunito](https://fonts.google.com/specimen/Nunito) and [Press Start 2P](https://fonts.google.com/specimen/Press+Start+2P) from Google Fonts.

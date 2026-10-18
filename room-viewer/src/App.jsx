@@ -1,4 +1,5 @@
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import * as THREE from 'three'
 import { Canvas } from '@react-three/fiber'
 import { Loader } from '@react-three/drei'
@@ -7,19 +8,120 @@ import { ToneMappingMode } from 'postprocessing'
 import Room from './Room.jsx'
 import CameraRig, { SHOTS } from './CameraRig.jsx'
 import InfoPanel from './InfoPanel.jsx'
+import TVControls, { CHANNELS } from './TVControls.jsx'
+import { INTRO_SECONDS, Intro, Outro } from './labs/intro.jsx'
+import { Newsroom, useShow } from './labs/show.jsx'
+import { playSting } from './labs/sting.js'
+import './labs/labs.css'
 
 // Default TV video. Override with ?video=<url>, or drop a video file on the page.
 const DEFAULT_VIDEO = '/videos/big-buck-bunny.mp4'
+// Start on a channel with ?channel=video|logo|show
+const START_CHANNEL = new URLSearchParams(window.location.search).get('channel')
 
 export default function App() {
   const [videoSrc, setVideoSrc] = useState(
     () => new URLSearchParams(window.location.search).get('video') || DEFAULT_VIDEO,
   )
   const [muted, setMuted] = useState(true)
-  const [tvOn, setTvOn] = useState(true)
+  // The set starts off: Watch TV (or the power button) switches it on
+  const [tvOn, setTvOn] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [shot, setShot] = useState('overview')
   const [infoOpen, setInfoOpen] = useState(false)
+  const [channel, setChannel] = useState(START_CHANNEL in CHANNELS ? START_CHANNEL : 'video')
+  const [logoTheme, setLogoTheme] = useState('studio')
+  const [logoTake, setLogoTake] = useState(0)
+  // after the last story the show rolls the outro
+  const show = useShow({ onEnd: () => changeChannel('outro') })
+
+  const replayLogo = () => {
+    setLogoTake((t) => t + 1)
+    if (!muted) playSting()
+  }
+  const toggleSound = () => {
+    setMuted(!muted)
+    // turning sound on mid-intro restarts it, so the jingle lines up with the animation
+    if (muted && (channel === 'logo' || channel === 'outro')) {
+      setLogoTake((t) => t + 1)
+      playSting()
+    }
+  }
+  // Watch TV opens the programme: the logo intro once the set is on, then the news show.
+  // null, or where it's up to: 'off' and 'on' wait for the camera move to switch the set off
+  // and back on (see SHOTS.watchTV), 'intro' plays the logo.
+  const [opening, setOpening] = useState(null)
+  const watchTV = () => {
+    // watching means listening: the jingle and Olive's voice need sound
+    setMuted(false)
+    setChannel('logo')
+    if (shot === 'watchTV') {
+      setTvOn(true)
+      setOpening('intro')
+    } else {
+      setShot('watchTV')
+      setOpening('off')
+    }
+  }
+  const pickShot = (key) => {
+    if (key === 'watchTV') return watchTV()
+    setOpening(null)
+    setShot(key)
+  }
+
+  useEffect(() => {
+    if (opening === 'off' && !tvOn) setOpening('on')
+    else if (opening === 'on' && tvOn) setOpening('intro')
+  }, [opening, tvOn])
+
+  useEffect(() => {
+    if (opening !== 'intro') return
+    setLogoTake((t) => t + 1)
+    if (!muted) playSting()
+    const timer = setTimeout(() => {
+      setOpening(null)
+      setChannel('show')
+      show.goStory(0)
+      show.setAuto(true)
+    }, INTRO_SECONDS * 1000)
+    return () => clearTimeout(timer)
+    // runs once per opening; muted is read as it is when the intro starts
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opening])
+
+  const changeChannel = (next) => {
+    setOpening(null)
+    setChannel(next)
+    setTvOn(true)
+    // the bumpers (logo intro, outro) start from the top, with the jingle
+    if ((next === 'logo' || next === 'outro') && next !== channel) replayLogo()
+  }
+  const logo = { theme: logoTheme, setTheme: (t) => (setLogoTheme(t), replayLogo()), replay: replayLogo }
+
+  // The labs pages rendered live on the TV screen: App renders them into this element through a
+  // portal, and TVFeed in Room.jsx places the element on the screen in 3D.
+  const feedEl = useMemo(() => document.createElement('div'), [])
+  const feed =
+    channel === 'logo' ? (
+      <div className="labs tv-labs">
+        <Intro key={`${logoTheme}-${logoTake}`} theme={logoTheme} />
+      </div>
+    ) : channel === 'outro' ? (
+      <div className="labs tv-labs">
+        <Outro key={`${logoTheme}-${logoTake}`} theme={logoTheme} />
+      </div>
+    ) : channel === 'show' ? (
+      <div className="labs tv-labs view-tv">
+        <Newsroom
+          story={show.story}
+          segment={show.segment}
+          auto={show.auto}
+          onDone={show.next}
+          // Olive speaks when the room's sound is on
+          voice={!muted && tvOn}
+        />
+      </div>
+    ) : null
 
   useEffect(() => {
     if (!videoSrc.startsWith('blob:')) return
@@ -30,7 +132,9 @@ export default function App() {
     e.preventDefault()
     setDragging(false)
     const file = [...e.dataTransfer.files].find((f) => f.type.startsWith('video/'))
-    if (file) setVideoSrc(URL.createObjectURL(file))
+    if (!file) return
+    setVideoSrc(URL.createObjectURL(file))
+    setChannel('video')
   }
 
   return (
@@ -53,7 +157,13 @@ export default function App() {
         <CameraRig shot={shot} onTvChange={setTvOn} />
         <Lights />
         <Suspense fallback={null}>
-          <Room videoSrc={videoSrc} muted={muted} tvOn={tvOn} onToggleTV={() => setTvOn((on) => !on)} />
+          <Room
+            videoSrc={videoSrc}
+            feedEl={feed ? feedEl : null}
+            muted={muted}
+            tvOn={tvOn}
+            onToggleTV={() => setTvOn((on) => !on)}
+          />
         </Suspense>
         {/* Stand-in for Blender's raytraced AO/GI: darkens corners, under furniture and wall joins.
             The composer turns off renderer tone mapping, so AgX is applied here instead. */}
@@ -66,16 +176,36 @@ export default function App() {
 
       <div className="shots">
         {Object.entries(SHOTS).map(([key, s]) => (
-          <button key={key} className={key === shot ? 'active' : ''} onClick={() => setShot(key)}>
+          <button key={key} className={key === shot ? 'active' : ''} onClick={() => pickShot(key)}>
             {s.label}
           </button>
         ))}
       </div>
       <div className="hud">
-        <button onClick={() => setTvOn((on) => !on)}>{tvOn ? 'TV off' : 'TV on'}</button>
-        <button onClick={() => setMuted((m) => !m)}>{muted ? 'Sound on' : 'Sound off'}</button>
         <span>Click the TV to switch it, or drop a video file to play it</span>
       </div>
+      {feed &&
+        createPortal(
+          <>
+            <div className="tv-feed-picture">{feed}</div>
+            {/* keyed by channel, so switching plays a burst of static; the outro closes the
+                programme, so it cuts in clean */}
+            {channel !== 'outro' && <div className="tv-feed-static" key={channel} />}
+            <div className="tv-feed-glass" />
+          </>,
+          feedEl,
+        )}
+      <TVControls
+        channel={channel}
+        onChannel={changeChannel}
+        show={show}
+        logo={logo}
+        tvOn={tvOn}
+        onToggleTV={() => setTvOn((on) => !on)}
+        muted={muted}
+        onToggleSound={toggleSound}
+        onWatch={watchTV}
+      />
       <button className="info-button" onClick={() => setInfoOpen(true)} aria-label="How this was made">
         i
       </button>

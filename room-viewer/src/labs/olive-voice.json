@@ -1,0 +1,50 @@
+{
+  "election-intro": {
+    "text": "Hi, I'm Olive! Today's little big question: what is an election? It's how people in a country choose who gets to make the rules for a while.",
+    "seconds": 9.12,
+    "voice": "7c9a5cb2f8914bd1963d4237e540c036",
+    "model": "turbo"
+  },
+  "election-outro": {
+    "text": "People vote differently because they care about different things, and that is okay. If your class had a vote, what would you choose?",
+    "seconds": 7.76,
+    "voice": "7c9a5cb2f8914bd1963d4237e540c036",
+    "model": "turbo"
+  },
+  "climate-intro": {
+    "text": "Our planet wears a blanket of air. Some of the things we burn make that blanket thicker, so the Earth holds on to more heat.",
+    "seconds": 7.56,
+    "voice": "7c9a5cb2f8914bd1963d4237e540c036",
+    "model": "turbo"
+  },
+  "climate-outro": {
+    "text": "Scientists, families and whole countries are working on it, and they don’t always agree on how. What would you try first?",
+    "seconds": 7.16,
+    "voice": "7c9a5cb2f8914bd1963d4237e540c036",
+    "model": "turbo"
+  },
+  "war-intro": {
+    "text": "This one can feel scary, so let's go slowly. Sometimes countries disagree about land or safety, and talking stops working.",
+    "seconds": 7.92,
+    "voice": "7c9a5cb2f8914bd1963d4237e540c036",
+    "model": "turbo"
+  },
+  "war-outro": {
+    "text": "Lots of people are working hard to help and to make peace. If you feel worried, talking to a grown-up you trust really helps.",
+    "seconds": 7.36,
+    "voice": "7c9a5cb2f8914bd1963d4237e540c036",
+    "model": "turbo"
+  },
+  "inequality-intro": {
+    "text": "Some families have lots of money and some have very little. Where you are born, and the chances you get, can make a big difference.",
+    "seconds": 7.72,
+    "voice": "7c9a5cb2f8914bd1963d4237e540c036",
+    "model": "turbo"
+  },
+  "inequality-outro": {
+    "text": "People have different ideas about what is fair. What do you think fair looks like?",
+    "seconds": 4.72,
+    "voice": "7c9a5cb2f8914bd1963d4237e540c036",
+    "model": "turbo"
+  }
+}

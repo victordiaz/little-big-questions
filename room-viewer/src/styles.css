@@ -317,3 +317,283 @@ body,
   font-size: 20px;
   pointer-events: none;
 }
+
+/* ---------- TV remote (channels, logo intro, news show) ---------- */
+.tv-controls {
+  position: fixed;
+  top: 64px;
+  right: 16px;
+  z-index: 20;
+  width: 290px;
+  max-height: calc(100% - 140px);
+  overflow-y: auto;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(20, 16, 36, 0.78);
+  backdrop-filter: blur(8px);
+  font-size: 13px;
+}
+
+.tv-controls button {
+  border: 0;
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tv-controls button:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.tv-controls button.active {
+  background: #f3eefc;
+  color: #1d1832;
+}
+
+.tvc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.tvc-head strong {
+  font-size: 15px;
+  letter-spacing: 0.04em;
+}
+
+.tvc-label {
+  margin: 12px 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.6;
+}
+
+.tvc-seg,
+.tvc-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tvc-seg button,
+.tvc-row button {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.tvc-row {
+  margin-top: 8px;
+}
+
+.tvc-list {
+  display: grid;
+  gap: 4px;
+}
+
+.tvc-list button {
+  text-align: left;
+  border-left: 4px solid var(--accent);
+  line-height: 1.3;
+}
+
+.tvc-list button span {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+
+.tvc-list button.active span {
+  color: #1d1832;
+}
+
+.tvc-wide {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.tvc-note {
+  margin: 10px 0 0;
+  opacity: 0.7;
+}
+
+.tv-controls kbd {
+  font: 600 10px ui-monospace, Menlo, monospace;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(127, 127, 127, 0.25);
+}
+
+@media (max-width: 700px) {
+  .tv-controls {
+    top: auto;
+    bottom: 64px;
+    max-height: 45%;
+  }
+}
+
+/* ---------- live HTML on the CRT (TVFeed in Room.jsx) ---------- */
+.tv-feed {
+  position: relative;
+  overflow: hidden;
+  background: #08090b;
+  /* the tube face is slightly rounded */
+  border-radius: 7% / 9%;
+}
+
+.tv-feed-picture {
+  position: absolute;
+  inset: 0;
+  filter: saturate(1.15) contrast(1.06);
+  transform-origin: center;
+}
+
+/* power on: a dot opens into a line, the line opens into the picture. Power off reverses. */
+.tv-feed.on .tv-feed-picture {
+  animation: tube-on 0.75s ease-out both;
+}
+
+.tv-feed.off .tv-feed-picture {
+  animation: tube-off 0.45s ease-in both;
+}
+
+@keyframes tube-on {
+  0% {
+    transform: scale(0.01, 0.006);
+    filter: brightness(6);
+  }
+  35% {
+    transform: scale(1, 0.006);
+    filter: brightness(5);
+  }
+  100% {
+    transform: none;
+    filter: saturate(1.15) contrast(1.06);
+  }
+}
+
+@keyframes tube-off {
+  0% {
+    transform: none;
+  }
+  65% {
+    transform: scale(1, 0.006);
+    filter: brightness(5);
+  }
+  100% {
+    transform: scale(0.01, 0.006);
+    filter: brightness(6);
+    opacity: 0;
+  }
+}
+
+/* a burst of static when the channel changes */
+.tv-feed-static {
+  position: absolute;
+  inset: -50%;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.4 -0.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-color: #222;
+  opacity: 0;
+  animation: static 0.45s steps(1) both;
+}
+
+@keyframes static {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-7%, 4%);
+  }
+  40% {
+    transform: translate(5%, -6%);
+  }
+  60% {
+    opacity: 0.9;
+    transform: translate(-3%, 7%);
+  }
+  80% {
+    opacity: 0.5;
+    transform: translate(6%, 2%);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.tv-feed.off .tv-feed-static {
+  display: none;
+}
+
+/* scanlines, glass reflection and the darker curved edges of the tube */
+.tv-feed-glass {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.12), transparent 40%),
+    radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.6));
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.7);
+  animation: flicker 0.12s infinite alternate;
+}
+
+@keyframes flicker {
+  to {
+    opacity: 0.92;
+  }
+}
+
+/* the labs pages fill the screen instead of sitting on a cream page */
+.labs.tv-labs {
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+.tv-labs .intro,
+.tv-labs .stage {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.tvc-row-inline {
+  display: flex;
+  gap: 4px;
+}
+
+.tvc-power i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 3px;
+  border-radius: 50%;
+  background: #8a2a2a;
+  vertical-align: 1px;
+}
+
+.tvc-power.on i {
+  background: #7dff8a;
+  box-shadow: 0 0 6px #7dff8a;
+}
+
+.tvc-sound:not(.on) {
+  color: #ffb3a8;
+}
+
+.tv-controls button.tvc-sound.on {
+  background: rgba(125, 255, 138, 0.18);
+}

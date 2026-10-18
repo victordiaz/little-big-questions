@@ -1,0 +1,38 @@
+[
+  {
+    "id": "election",
+    "topic": "Elections",
+    "question": "What is an election?",
+    "accent": "#ffc93c",
+    "mood": "happy",
+    "intro": "Hi, I'm Olive! Today's little big question: what is an election? It's how people in a country choose who gets to make the rules for a while.",
+    "outro": "People vote differently because they care about different things, and that is okay. If your class had a vote, what would you choose?"
+  },
+  {
+    "id": "climate",
+    "topic": "Climate",
+    "question": "Why is the planet getting warmer?",
+    "accent": "#2bb3a3",
+    "mood": "explaining",
+    "intro": "Our planet wears a blanket of air. Some of the things we burn make that blanket thicker, so the Earth holds on to more heat.",
+    "outro": "Scientists, families and whole countries are working on it, and they don’t always agree on how. What would you try first?"
+  },
+  {
+    "id": "war",
+    "topic": "War",
+    "question": "Why do countries sometimes fight?",
+    "accent": "#8fa8ff",
+    "mood": "gentle",
+    "intro": "This one can feel scary, so let's go slowly. Sometimes countries disagree about land or safety, and talking stops working.",
+    "outro": "Lots of people are working hard to help and to make peace. If you feel worried, talking to a grown-up you trust really helps."
+  },
+  {
+    "id": "inequality",
+    "topic": "Inequality",
+    "question": "Why do some people have more than others?",
+    "accent": "#ff6b5a",
+    "mood": "explaining",
+    "intro": "Some families have lots of money and some have very little. Where you are born, and the chances you get, can make a big difference.",
+    "outro": "People have different ideas about what is fair. What do you think fair looks like?"
+  }
+]
