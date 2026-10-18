@@ -26,7 +26,8 @@ This README walks through how we got here, step by step.
 14. [Step 13: today's news, made for kids](#step-13-todays-news-made-for-kids)
 15. [Project layout](#project-layout)
 16. [Running and regenerating](#running-and-regenerating)
-17. [Credits](#credits)
+17. [BFL Challenge: Train a Style, Tell a Story](#bfl-challenge-train-a-style-tell-a-story)
+18. [Credits](#credits)
 
 ## The pipeline at a glance
 
@@ -533,6 +534,45 @@ bpy.ops.export_scene.gltf(
     export_image_format="JPEG", export_jpeg_quality=85,
 )
 ```
+
+## BFL Challenge: Train a Style, Tell a Story
+
+This project is an entry in the Black Forest Labs hackathon track **Media Generation: Train a Style, Tell a Story**. We trained a LoRA on FLUX 3 Image Klein to produce the flat hand-drawn cartoon look of 1960s Zagreb Film's Professor Balthazar, then used it to generate a film that answers a real kid's question.
+
+### The style
+
+Flat 1960s Zagreb Film hand-drawn cartoon, the Professor Balthazar look — thick black outlines, flat muted colours, simple round faces. The base Klein model cannot produce this look without the LoRA.
+
+### Where the data came from
+
+23 frames extracted and cleaned from three Zagreb Film cartoon episodes on YouTube. Deduplicated, cropped, and frames containing text were dropped (text in training images teaches the model fake lettering). Each frame was captioned by a vision model (MiniCPM-V-4\_5 on Nebius Token Factory) with content-only descriptions ending in the trigger word `bltzr style`.
+
+### Which checkpoint
+
+Final 2,000-step checkpoint (`baltazar-style-lora.safetensors`), rank-32 LoRA, learning rate 1e-4, AdamW, batch size 1, resolution 1024. Trained on FLUX 3 Image Klein Base (`black-forest-labs/flux-3-image-klein-base`) with AI Toolkit (Ostris), arch `flux3`, on an NVIDIA RTX PRO 6000 GPU rented from Nebius Cloud. Total training time: 34 minutes.
+
+**LoRA on Hugging Face:** [jurecerkez/baltazar-style-lora](https://huggingface.co/jurecerkez/baltazar-style-lora)
+
+### The film
+
+[`bfl-challenge/film.mp4`](bfl-challenge/film.mp4) (61 seconds, 1280×704) — "Why are Ukraine and Russia fighting?", a four-step story in the Balthazar style that explains the background honestly, shows different points of view, points to people helping, and ends with a question back to the viewer. The style holds across all four scenes.
+
+### Training images
+
+6 of the 23 training images:
+
+![img01](bfl-challenge/training_images/img01.jpg)
+![img06](bfl-challenge/training_images/img06.jpg)
+![img11](bfl-challenge/training_images/img11.jpg)
+![img16](bfl-challenge/training_images/img16.jpg)
+![img21](bfl-challenge/training_images/img21.jpg)
+![img25](bfl-challenge/training_images/img25.jpg)
+
+### Base vs. LoRA
+
+Same prompt and seed. Klein Base on the left, with the LoRA on the right:
+
+![Base vs LoRA](bfl-challenge/base_vs_lora.jpg)
 
 ## Credits
 
