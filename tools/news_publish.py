@@ -7,8 +7,8 @@
 Each story plays in the show like the others: Olive's intro at the desk, the story video
 with its narration, then Olive's wrap-up. Run after news_video.py:
 
-    uv run news_publish.py                     # latest news/<date>/stories.json
-    uv run labs_prompts/presenter_voice.py     # then voice Olive's new lines
+    uv run tools/news_publish.py                     # latest news/<date>/stories.json
+    uv run tools/presenter_voice.py     # then voice Olive's new lines
 
 Copies each story's video to room-viewer/public/news/<id>.mp4 and writes
 room-viewer/src/labs/news.json, which the show plays before the evergreen stories in
@@ -64,7 +64,7 @@ def main():
     VIDEOS.mkdir(parents=True, exist_ok=True)
     for entry in entries:
         if not entry.get("video"):
-            print(f"skip {entry['id']}: no story video yet (run news_video.py)")
+            print(f"skip {entry['id']}: no story video yet (run tools/news_video.py)")
             continue
         shutil.copyfile(ROOT / entry["video"], VIDEOS / f"{entry['id']}.mp4")
         news.append({
@@ -81,7 +81,7 @@ def main():
 
     NEWS.write_text(json.dumps(news, indent=2, ensure_ascii=False) + "\n")
     print(f"Saved: {NEWS.relative_to(ROOT)} ({len(news)} stories)")
-    print("Next: uv run labs_prompts/presenter_voice.py, for Olive's new lines")
+    print("Next: uv run tools/presenter_voice.py, for Olive's new lines")
 
 
 if __name__ == "__main__":

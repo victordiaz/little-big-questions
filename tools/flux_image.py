@@ -6,9 +6,9 @@
 
 Usage:
     export BFL_API_KEY=...
-    uv run flux_image.py "a red fox in fresh snow" --aspect-ratio 16:9 --out images
-    uv run flux_image.py "a red fox in fresh snow" --model klein
-    uv run flux_image.py "Turn <ref_image_0> into pixel art" --image photo.png --out images
+    uv run tools/flux_image.py "a red fox in fresh snow" --aspect-ratio 16:9 --out images
+    uv run tools/flux_image.py "a red fox in fresh snow" --model klein
+    uv run tools/flux_image.py "Turn <ref_image_0> into pixel art" --image photo.png --out images
 """
 import argparse
 import base64

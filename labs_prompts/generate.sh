@@ -11,7 +11,7 @@ PARALLEL=6
 gen() {
   local id=$1 aspect=$2 prompt=$3
   mkdir -p "$OUT/$id"
-  if uv run flux_image.py "$prompt" --aspect-ratio "$aspect" --out "$OUT/$id" > "$OUT/$id/gen.log" 2>&1; then
+  if uv run tools/flux_image.py "$prompt" --aspect-ratio "$aspect" --out "$OUT/$id" > "$OUT/$id/gen.log" 2>&1; then
     echo "ok   $id"
   else
     echo "FAIL $id (see $OUT/$id/gen.log)"

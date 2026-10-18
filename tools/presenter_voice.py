@@ -5,11 +5,11 @@
 """Voices Olive's lines (room-viewer/src/labs/stories.json and news.json) with Chatterbox.
 
 Chatterbox clones the voice of a Fish Audio voice's sample clip. Start the server first
-(uv run scripts/chatterbox-server.py), then:
+(uv run tools/chatterbox_server.py), then:
 
-    uv run labs_prompts/presenter_voice.py
-    uv run labs_prompts/presenter_voice.py --only war-intro --force
-    uv run labs_prompts/presenter_voice.py --model multilingual --exaggeration 0.7
+    uv run tools/presenter_voice.py
+    uv run tools/presenter_voice.py --only war-intro --force
+    uv run tools/presenter_voice.py --model multilingual --exaggeration 0.7
 
 Writes room-viewer/public/voices/olive/<story>-<intro|outro>.wav and records each line's
 text and length in room-viewer/src/labs/olive-voice.json, which the show reads. A line is

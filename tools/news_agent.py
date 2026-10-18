@@ -7,12 +7,12 @@
 Tavily searches recent news; Nemotron 3.5 Super VL (Nebius Token Factory) picks the top 3
 (--count), then writes each one as a Little Big Questions story: a title and 3-5 narration
 steps, each with an image prompt that FLUX 3 Klein draws, plus Olive's intro and wrap-up.
-Keys come from the environment or from a .env file next to this script (TAVILY_API_KEY,
+Keys come from the environment or from the .env file at the repository root (TAVILY_API_KEY,
 NEBIUS_API_KEY, BFL_API_KEY):
 
-    uv run news_agent.py
-    uv run news_agent.py --count 1                # one story, for testing
-    uv run news_agent.py --days 2 --candidates 20 --no-images
+    uv run tools/news_agent.py
+    uv run tools/news_agent.py --count 1                # one story, for testing
+    uv run tools/news_agent.py --days 2 --candidates 20 --no-images
 
 Writes news/<date>/stories.json and news/<date>/<story-id>/step-<n>.jpg.
 """
@@ -29,7 +29,8 @@ from openai import OpenAI
 
 from flux_image import generate
 
-ROOT = Path(__file__).resolve().parent
+# The repository root: this script lives in tools/
+ROOT = Path(__file__).resolve().parent.parent
 TAVILY_URL = "https://api.tavily.com/search"
 NEBIUS_URL = "https://api.tokenfactory.us-north1.nebius.com/v1/"
 MODEL = "nvidia/Nemotron-3.5-Super-VL"

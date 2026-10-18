@@ -7,10 +7,10 @@
 Chatterbox clones the voice of a Fish Audio voice's sample clip, Dash (PBS KIDS) by
 default. Start the server first, then:
 
-    uv run scripts/chatterbox-server.py
-    uv run news_voice.py                       # latest news/<date>/stories.json
-    uv run news_voice.py news/2026-10-18/stories.json --only climate --force
-    uv run news_voice.py --model multilingual --exaggeration 0.7
+    uv run tools/chatterbox_server.py
+    uv run tools/news_voice.py                       # latest news/<date>/stories.json
+    uv run tools/news_voice.py news/2026-10-18/stories.json --only climate --force
+    uv run tools/news_voice.py --model multilingual --exaggeration 0.7
 
 Writes news/<date>/<story-id>/voice-<n>.wav and records each step's audio and its length
 in stories.json, which news_video.py uses to time the clips. A step is skipped when its
@@ -104,7 +104,7 @@ def main():
             response = requests.post(f"{args.server}/tts", timeout=900,
                                      json={k: v for k, v in body.items() if v is not None})
         except requests.ConnectionError:
-            raise SystemExit(f"No Chatterbox at {args.server}: uv run scripts/chatterbox-server.py")
+            raise SystemExit(f"No Chatterbox at {args.server}: uv run tools/chatterbox_server.py")
         if not response.ok:
             print(f"  failed: {response.status_code} {response.text[:300]}")
             continue

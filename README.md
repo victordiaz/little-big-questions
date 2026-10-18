@@ -35,13 +35,13 @@ flowchart LR
     ref["Reference image<br/>(4 views of the room)"] --> blender
     subgraph blender["Blender 5.2 (driven over MCP)"]
         direction TB
-        py["Python via bpy<br/>room_helpers.py"] --> scene["retro_bedroom.blend"]
-        scene --> render["EEVEE render<br/>renders/room_iso.png"]
+        py["Python via bpy<br/>blender/room_helpers.py"] --> scene["blender/retro_bedroom.blend"]
+        scene --> render["EEVEE render<br/>blender/renders/room_iso.png"]
     end
-    flux["FLUX 3 Image API<br/>flux_image.py"] -->|"posters, blanket,<br/>carpet, labels…"| blender
+    flux["FLUX 3 Image API<br/>tools/flux_image.py"] -->|"posters, blanket,<br/>carpet, labels…"| blender
     web["Logos + press photos<br/>images/refs/"] -->|"--image references"| flux
     scene -->|"glTF export"| glb["retro_bedroom.glb"]
-    news["News pipeline<br/>news_*.py"] -->|"story videos,<br/>news.json"| app
+    news["News pipeline<br/>tools/news_*.py"] -->|"story videos,<br/>news.json"| app
     glb --> app["React + three.js app<br/>room-viewer/"]
 ```
 
@@ -74,10 +74,10 @@ flowchart TB
 
 ## Step 2: building the room in Blender over MCP
 
-The room is 4 × 4 m with 2.6 m walls, modelled entirely from simple primitives in a low-poly style. A small helper module, [`room_helpers.py`](room_helpers.py), gives every script the same building blocks (`box`, `plane`, `cyl`, `mat`, `img_mat`), so each step is a short Python snippet sent to Blender:
+The room is 4 × 4 m with 2.6 m walls, modelled entirely from simple primitives in a low-poly style. A small helper module, [`blender/room_helpers.py`](blender/room_helpers.py), gives every script the same building blocks (`box`, `plane`, `cyl`, `mat`, `img_mat`), so each step is a short Python snippet sent to Blender:
 
 ```python
-exec(open("room_helpers.py").read())
+exec(open("blender/room_helpers.py").read())
 wood = mat("Wood", (0.55, 0.3, 0.13), 0.6)
 box("Dresser", 0.0, 0.55, 1.95, 3.35, 0.06, 0.85, wood, bevel=0.01)
 ```
@@ -97,7 +97,7 @@ The final EEVEE render (AgX view transform, orthographic camera matching the ref
 
 ## Step 3: textures and posters with FLUX
 
-All artwork came from the [FLUX 3 Image](https://docs.bfl.ai/flux_3/flux3_image_overview) API through [`flux_image.py`](flux_image.py). Jobs ran in parallel (the account allows 8 at a time), each into its own folder under `images/room/`.
+All artwork came from the [FLUX 3 Image](https://docs.bfl.ai/flux_3/flux3_image_overview) API through [`tools/flux_image.py`](tools/flux_image.py). Jobs ran in parallel (the account allows 8 at a time), each into its own folder under `images/room/`.
 
 ![Generated posters](docs/images/posters.jpg)
 
@@ -310,7 +310,7 @@ flowchart LR
 
 Everything inside the studio is sized in container units, so the same set works at 16:9 on the labs page and at 4:3 on the TV.
 
-**Her voice.** `labs_prompts/presenter_voice.py` voices each intro and wrap-up line with [Chatterbox](https://github.com/resemble-ai/chatterbox) running locally, cloning the sample clip of a Fish Audio voice ("kids"). The sample's link is signed for an hour, so the script fetches a fresh one from the Fish Audio API on every run. It writes one wav per line to `public/voices/olive/` and records each line's text and length in `src/labs/olive-voice.json`. A line is redone only when its text changes, and a line edited after it was recorded stays silent until it is voiced again. On a Mac's CPU each line takes 20 to 80 seconds.
+**Her voice.** `tools/presenter_voice.py` voices each intro and wrap-up line with [Chatterbox](https://github.com/resemble-ai/chatterbox) running locally, cloning the sample clip of a Fish Audio voice ("kids"). The sample's link is signed for an hour, so the script fetches a fresh one from the Fish Audio API on every run. It writes one wav per line to `public/voices/olive/` and records each line's text and length in `src/labs/olive-voice.json`. A line is redone only when its text changes, and a line edited after it was recorded stays silent until it is voiced again. On a Mac's CPU each line takes 20 to 80 seconds.
 
 During playback the bubble text follows the audio and the beak moves while it plays. If the browser blocks audio, the line types out at speaking pace instead. One bug is worth recording: React StrictMode starts each effect twice in development, so the first attempt to play was aborted, and its fallback started a typing timer that was never stopped. That stale timer kept writing the previous line into the bubble, which flickered empty several times a second. Now nothing from a cancelled line can touch the bubble.
 
@@ -402,7 +402,7 @@ flowchart LR
 
 **Pictures.** Each image prompt, plus a shared style line, goes to FLUX 3 Klein (`flux_image.py --model klein`) at 16:9, six at a time.
 
-**Narration.** `scripts/chatterbox-server.py` runs Chatterbox locally (copied from the voice lab project and trimmed to the English models). `news_voice.py` clones the voice of a Fish Audio voice's sample, "Dash (PBS KIDS)" by default, downloaded once into `.voices/` because the sample's link expires. It records each step's length in `stories.json`. On a Mac's CPU a 15-second line takes about a minute.
+**Narration.** `tools/chatterbox_server.py` runs Chatterbox locally (copied from the voice lab project and trimmed to the English models). `news_voice.py` clones the voice of a Fish Audio voice's sample, "Dash (PBS KIDS)" by default, downloaded once into `.voices/` because the sample's link expires. It records each step's length in `stories.json`. On a Mac's CPU a 15-second line takes about a minute.
 
 **Video.** `news_video.py` makes one FLUX 3 Video clip per step in image-to-video mode, with two keyframes: the step's image as the first frame and the next step's image as the last, so the clips flow into each other instead of cutting. A clip lasts as long as its narration plus a beat, within FLUX's 5 to 20 seconds. ffmpeg then lays each step's narration over its clip, holding the last frame when the voice runs longer, and joins the clips into one video per story. Clips that exist are kept, so adding the narration later costs no FLUX credits.
 
@@ -415,27 +415,30 @@ flowchart LR
 ```
 .
 ├── README.md
-├── flux_image.py            # FLUX 3 Image / Klein CLI (generate, or edit with --image)
-├── news_agent.py            # Tavily + Nemotron: today's stories, written for kids, FLUX Klein images
-├── news_voice.py            # narrates each step with Chatterbox
-├── news_video.py            # FLUX 3 Video clips per step, narration on top, joined with ffmpeg
-├── news_publish.py          # puts the stories in the show (public/news/, news.json)
-├── scripts/chatterbox-server.py  # local Chatterbox TTS server on :8004
-├── news/<date>/             # stories.json, step images, voices and videos (not in git)
-├── room_helpers.py          # bpy helpers used by every Blender snippet
+├── blender/
+│   ├── retro_bedroom.blend  # the Blender scene
+│   ├── room_helpers.py      # bpy helpers used by every Blender snippet
+│   └── renders/room_iso.png # EEVEE render
+├── tools/                   # command-line tools, each a self-contained uv script
+│   ├── flux_image.py        # FLUX 3 Image / Klein CLI (generate, or edit with --image)
+│   ├── news_agent.py        # Tavily + Nemotron: today's stories, written for kids, FLUX Klein images
+│   ├── news_voice.py        # narrates each step with Chatterbox
+│   ├── news_video.py        # FLUX 3 Video clips per step, narration on top, joined with ffmpeg
+│   ├── news_publish.py      # puts the stories in the show (public/news/, news.json)
+│   ├── presenter_voice.py   # voices Olive's lines with Chatterbox
+│   └── chatterbox_server.py # local Chatterbox TTS server on :8004
 ├── labs_prompts/
 │   ├── prompts.tsv          # FLUX prompts for the labs concepts
-│   ├── generate.sh          # runs them through flux_image.py
-│   └── presenter_voice.py   # voices Olive's lines with Chatterbox
-├── retro_bedroom.blend      # the Blender scene
-├── renders/room_iso.png     # EEVEE render
+│   └── generate.sh          # runs them through tools/flux_image.py
 ├── images/
 │   ├── room/<name>/         # generated textures and posters
-│   └── refs/                # logos and DGX Spark press photos
+│   ├── refs/                # logos and DGX Spark press photos
+│   └── logs/                # FLUX run logs (not in git)
 ├── docs/images/             # figures for this README
+├── news/<date>/             # stories.json, step images, voices and videos (not in git)
 └── room-viewer/             # React + three.js app
     ├── public/models/retro_bedroom.glb
-    ├── public/news/             # today's story videos (news_publish.py)
+    ├── public/news/         # today's story videos (news_publish.py, not in git)
     ├── public/audio/intro-jingle.mp3
     ├── public/voices/olive/ # Olive's recorded lines
     └── src/
@@ -481,11 +484,11 @@ Open `http://localhost:5173/` for the bedroom (press **Watch TV**), `http://loca
 
 ```sh
 # text to image
-uv run flux_image.py "Retro pixel art poster, a green dragon…" \
+uv run tools/flux_image.py "Retro pixel art poster, a green dragon…" \
   --aspect-ratio 3:4 --out images/room/poster_x
 
 # edit from references (paths or URLs, up to 10)
-uv run flux_image.py \
+uv run tools/flux_image.py \
   "Pixel art poster in the style of <ref_image_1> with the logo from <ref_image_0>" \
   --image images/refs/logo.jpg --image images/room/poster_rocket/….png \
   --aspect-ratio 3:4 --out images/room/poster_y
@@ -501,13 +504,13 @@ bash labs_prompts/generate.sh presenter/owl      # one experiment or concept
 **Today's news.** Put `TAVILY_API_KEY`, `NEBIUS_API_KEY` and `BFL_API_KEY` in the environment or in a `.env` file at the root (git ignores it; `HF_TOKEN` there speeds up Chatterbox's model downloads). Start Chatterbox in another terminal, then run the steps in order:
 
 ```sh
-uv run scripts/chatterbox-server.py         # keep it running, on localhost:8004
+uv run tools/chatterbox_server.py       # keep it running, on localhost:8004
 
-uv run news_agent.py --count 1              # find, pick and write the stories, draw the steps
-uv run news_voice.py                        # narrate each step
-uv run news_video.py                        # animate, add the narration, join
-uv run news_publish.py                      # into the show
-uv run labs_prompts/presenter_voice.py      # Olive's new lines
+uv run tools/news_agent.py --count 1    # find, pick and write the stories, draw the steps
+uv run tools/news_voice.py              # narrate each step
+uv run tools/news_video.py              # animate, add the narration, join
+uv run tools/news_publish.py            # into the show
+uv run tools/presenter_voice.py         # Olive's new lines
 ```
 
 Each script works on the latest `news/<date>/stories.json` and skips what's already done. Useful options: `news_agent.py --no-images` to tune the writing first, `--only <story-id>` and `--force` on the voice and video scripts, and `news_video.py --audio` to let FLUX add its own sound under the narration.
@@ -515,16 +518,16 @@ Each script works on the latest `news/<date>/stories.json` and skips what's alre
 **Olive's voice.** With Chatterbox running:
 
 ```sh
-uv run labs_prompts/presenter_voice.py                       # only new or changed lines, stories and news
-uv run labs_prompts/presenter_voice.py --only war-intro --force
-uv run labs_prompts/presenter_voice.py --model multilingual --exaggeration 0.7
+uv run tools/presenter_voice.py         # only new or changed lines, stories and news
+uv run tools/presenter_voice.py --only war-intro --force
+uv run tools/presenter_voice.py --model multilingual --exaggeration 0.7
 ```
 
-**Model.** Edit the scene in Blender, then re-export with the same settings (run inside Blender):
+**Model.** Edit `blender/retro_bedroom.blend`, then re-export with the same settings (run inside Blender; `//` is the folder of the `.blend`):
 
 ```python
 bpy.ops.export_scene.gltf(
-    filepath="room-viewer/public/models/retro_bedroom.glb",
+    filepath=bpy.path.abspath("//../room-viewer/public/models/retro_bedroom.glb"),
     export_format="GLB", export_apply=True, use_renderable=True,
     export_lights=False, export_cameras=False,
     export_image_format="JPEG", export_jpeg_quality=85,
@@ -537,7 +540,7 @@ bpy.ops.export_scene.gltf(
 - **Logos** from [Dashboard Icons](https://dashboardicons.com/) and [LobeHub Icons](https://lobehub.com/icons). NVIDIA, DGX Spark, Nemotron, Nebius, Black Forest Labs and Tavily are trademarks of their respective owners and are used here for a personal, non-commercial scene.
 - **Posters, textures and labs concepts** generated with [FLUX 3 Image](https://docs.bfl.ai/) by Black Forest Labs; story images with FLUX 3 Klein and story videos with FLUX 3 Video.
 - **News** found with [Tavily](https://www.tavily.com/) and written for kids by NVIDIA Nemotron 3.5 Super VL on [Nebius Token Factory](https://nebius.com/).
-- **Voices** made with [Chatterbox](https://github.com/resemble-ai/chatterbox), cloning the samples of the Fish Audio voices "kids" (Olive) and "Dash (PBS KIDS)" (the narrator).
+- **The narrator's voice** in the story videos made with Chatterbox, cloned from the sample of the [Fish Audio voice "Dash (PBS KIDS)"](https://fish.audio/m/0ace0d3ff3cd403e88e751d4d9485020/).
 - **Jingle**: "Positive Orchestral Jingle" by sergequadrado, [Freesound #455606](https://freesound.org/s/455606/).
 - **Olive's voice** made with [Chatterbox](https://github.com/resemble-ai/chatterbox) by Resemble AI, cloned from the sample of the [Fish Audio voice "kids"](https://fish.audio/m/7c9a5cb2f8914bd1963d4237e540c036/).
 - **Fonts**: [Fredoka](https://fonts.google.com/specimen/Fredoka), [Nunito](https://fonts.google.com/specimen/Nunito) and [Press Start 2P](https://fonts.google.com/specimen/Press+Start+2P) from Google Fonts.

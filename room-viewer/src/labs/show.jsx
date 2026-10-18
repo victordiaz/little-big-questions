@@ -10,7 +10,7 @@ import storiesJson from './stories.json'
 //   intro  - Olive at the desk asks the question and sets it up
 //   video  - the story video takes the screen, Olive stays in a corner bubble
 //   outro  - back to the desk: different views, and "your questions matter"
-// The lines live in stories.json so labs_prompts/presenter_voice.py can voice them.
+// The lines live in stories.json so tools/presenter_voice.py can voice them.
 // When there's news (news.json, from news_publish.py) the rundown is today's news, each story
 // with its own narrated video and the `chapters` that caption it, and the show ends after it.
 // Without news it falls back to the evergreen stories. A glob, so the show still works before
@@ -67,7 +67,7 @@ export function useShow({ onEnd } = {}) {
   return { story: STORIES[storyIdx], storyIdx, segment, auto, setAuto, setSegment, goStory, next, prev }
 }
 
-// `voice`: play Olive's recorded lines (labs_prompts/presenter_voice.py) when they exist, and
+// `voice`: play Olive's recorded lines (tools/presenter_voice.py) when they exist, and
 // the narration of a news story's video.
 export function Newsroom({ story, segment, auto, onDone, voice = false }) {
   const line = segment === 'intro' ? story.intro : segment === 'outro' ? story.outro : ''
@@ -202,7 +202,7 @@ export function Newsroom({ story, segment, auto, onDone, voice = false }) {
   )
 }
 
-// Olive's recorded lines, if labs_prompts/presenter_voice.py has made them. A glob, so the show
+// Olive's recorded lines, if tools/presenter_voice.py has made them. A glob, so the show
 // still works before the file exists.
 const VOICE = Object.values(import.meta.glob('./olive-voice.json', { eager: true, import: 'default' }))[0] ?? {}
 

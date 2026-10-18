@@ -8,11 +8,11 @@ Each step becomes one clip that starts on the step's image and ends on the next 
 image, so the clips flow into each other. The clip lasts as long as the step's voice from
 news_voice.py (run it first), or about as long as its narration would take to read. Then
 ffmpeg joins the clips into one video per story, with the narration on top when every step
-is voiced. BFL_API_KEY comes from the environment or the .env file next to this script:
+is voiced. BFL_API_KEY comes from the environment or the .env file at the repository root:
 
-    uv run news_video.py                       # latest news/<date>/stories.json
-    uv run news_video.py news/2026-10-18/stories.json --only climate --force
-    uv run news_video.py --audio --resolution fhd
+    uv run tools/news_video.py                       # latest news/<date>/stories.json
+    uv run tools/news_video.py news/2026-10-18/stories.json --only climate --force
+    uv run tools/news_video.py --audio --resolution fhd
 
 Writes news/<date>/<story-id>/clip-<n>.mp4 and <story-id>.mp4, and records the paths in
 stories.json. Clips that already exist are kept, unless --force.
@@ -122,7 +122,7 @@ def join_clips(clips, path):
 def latest_stories():
     found = sorted((ROOT / "news").glob("*/stories.json"))
     if not found:
-        raise SystemExit("No news/<date>/stories.json yet; run news_agent.py first")
+        raise SystemExit("No news/<date>/stories.json yet; run tools/news_agent.py first")
     return found[-1]
 
 
@@ -184,7 +184,7 @@ def main():
                 continue
             clips = [str(v.relative_to(ROOT)) for v in voiced]
         else:
-            print(f"{entry['id']}: no narration yet (run news_voice.py), joining silent clips")
+            print(f"{entry['id']}: no narration yet (run tools/news_voice.py), joining silent clips")
         path = folder / f"{entry['id']}.mp4"
         if join_clips(clips, path):
             entry["video"] = str(path.relative_to(ROOT))

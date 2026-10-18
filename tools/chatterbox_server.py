@@ -8,9 +8,9 @@
 # ///
 """Chatterbox on this computer, the narrator's voice for the news stories.
 
-    uv run scripts/chatterbox-server.py
+    uv run tools/chatterbox_server.py
 
-Serves on localhost:8004 for news_voice.py and labs_prompts/presenter_voice.py. It clones
+Serves on localhost:8004 for news_voice.py and tools/presenter_voice.py. It clones
 the voice of a reference clip: a Fish Audio voice's sample (a URL), or a clip in .voices/
 (wav or mp3, about 10 seconds of one person talking). Each model downloads on its first
 use (a few GB), with HF_TOKEN from .env when it's there.
