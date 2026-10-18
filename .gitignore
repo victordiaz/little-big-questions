@@ -1,0 +1,6 @@
+.DS_Store
+node_modules/
+dist/
+.playwright-mcp/
+*.blend1
+*.log

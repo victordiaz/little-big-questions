@@ -1,0 +1,319 @@
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  /* The app is always full-window; only the info overlay scrolls. This also hides the brief
+     overflow from the elements Mermaid adds to <body> to measure diagrams. */
+  overflow: hidden;
+  background: #3b3456;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #f3eefc;
+}
+
+.hud {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.hud button {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: rgba(20, 16, 36, 0.7);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.hud button:hover {
+  background: rgba(20, 16, 36, 0.9);
+}
+
+.hud span {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.shots {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px;
+  max-width: calc(100% - 32px);
+  border-radius: 999px;
+  background: rgba(20, 16, 36, 0.6);
+}
+
+.shots button {
+  border: 0;
+  border-radius: 999px;
+  padding: 7px 14px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.75;
+}
+
+.shots button:hover {
+  opacity: 1;
+}
+
+.shots button.active {
+  background: #f3eefc;
+  color: #2a2340;
+  opacity: 1;
+}
+
+.info-button {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(20, 16, 36, 0.7);
+  color: inherit;
+  font: italic 600 18px Georgia, serif;
+  cursor: pointer;
+}
+
+.info-button:hover {
+  background: rgba(20, 16, 36, 0.9);
+}
+
+/* Full-screen overlay above the whole scene and HUD; it scrolls as one page. */
+.info-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(6px);
+  outline: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+.info-close {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 11;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: inherit;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.info-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Centred column: sticky contents on the side, text capped at a readable width. */
+.info-layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 760px);
+  justify-content: center;
+  gap: 56px;
+  padding: 0 32px;
+}
+
+.info-toc {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  box-sizing: border-box;
+  max-height: 100vh;
+  padding: 48px 0 32px;
+  font-size: 14px;
+  /* still scrolls on short windows, but without a second visible scrollbar */
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.info-toc::-webkit-scrollbar {
+  display: none;
+}
+
+.info-toc-title {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
+.info-toc ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.info-toc li a {
+  display: block;
+  margin-left: -1px;
+  padding: 5px 0 5px 14px;
+  border-left: 2px solid transparent;
+  color: rgba(243, 238, 252, 0.65);
+  text-decoration: none;
+  line-height: 1.35;
+}
+
+.info-toc li.level-3 a {
+  padding-left: 28px;
+  font-size: 13px;
+}
+
+.info-toc li a:hover {
+  color: #fff;
+}
+
+.info-toc li.active a {
+  border-left-color: #b9a6ff;
+  color: #fff;
+}
+
+.readme {
+  padding: 32px 0 96px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #e6e0f5;
+}
+
+@media (max-width: 960px) {
+  .info-layout {
+    grid-template-columns: minmax(0, 760px);
+    padding: 0 16px;
+  }
+
+  .info-toc {
+    display: none;
+  }
+}
+
+.readme h1,
+.readme h2,
+.readme h3 {
+  line-height: 1.25;
+  color: #fff;
+  scroll-margin-top: 16px;
+}
+
+.readme h1 {
+  font-size: 30px;
+  margin: 24px 0 12px;
+}
+
+.readme h2 {
+  font-size: 22px;
+  margin: 40px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.readme h3 {
+  font-size: 17px;
+  margin: 28px 0 8px;
+}
+
+.readme a {
+  color: #b9a6ff;
+}
+
+.readme .file-link,
+.readme code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 13px;
+}
+
+.readme :not(pre) > code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.readme pre {
+  overflow-x: auto;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: #120f22;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.readme img {
+  display: block;
+  max-width: 100%;
+  margin: 16px 0;
+  border-radius: 8px;
+}
+
+.readme table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 14px;
+  display: block;
+  overflow-x: auto;
+}
+
+.readme th,
+.readme td {
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: left;
+  vertical-align: top;
+}
+
+.readme th {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.readme .diagram {
+  margin: 16px 0;
+  padding: 16px;
+  border-radius: 8px;
+  background: #120f22;
+  overflow-x: auto;
+  text-align: center;
+}
+
+.readme .diagram svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.readme .diagram.loading {
+  font-size: 13px;
+  opacity: 0.6;
+}
+
+.drop-hint {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(20, 16, 36, 0.6);
+  font-size: 20px;
+  pointer-events: none;
+}
