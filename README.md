@@ -57,7 +57,8 @@ This README walks through how we got here, step by step.
 16. [BFL Challenge: Train a Style, Tell a Story](#bfl-challenge-train-a-style-tell-a-story)
 17. [Project layout](#project-layout)
 18. [Running and regenerating](#running-and-regenerating)
-19. [Credits](#credits)
+19. [Team](#team)
+20. [Credits](#credits)
 
 ## The pipeline at a glance
 
@@ -636,6 +637,14 @@ bpy.ops.export_scene.gltf(
     export_image_format="JPEG", export_jpeg_quality=85,
 )
 ```
+
+## Team
+
+Little Big Questions was built by three people at the Nebius Build Week hackathon in Berlin, 18 October 2026:
+
+- [victordiaz](https://github.com/victordiaz)
+- [jurecerkez](https://huggingface.co/jurecerkez), who trained the Balthazar style LoRA
+- [Ahmed-Sohail2000](https://github.com/Ahmed-Sohail2000)
 
 ## Credits
 
