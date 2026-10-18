@@ -2,7 +2,21 @@
 
 Little Big Questions helps kids make sense of the big, sometimes scary things happening in the world. We take real news, like elections, wars, climate, or inequality, and explain it in friendly, cartoon-style stories that are honest without being frightening. The goal isn’t to shield kids from the world, but to help them understand that it’s complicated, that people see things differently, and that their questions matter.
 
-This repository is where the show is being built. It lives in a cozy 90s kid's bedroom, rebuilt in Blender from a single AI-generated reference image, textured with images from FLUX, and shipped as an interactive React + three.js app. On the bedroom's CRT, Olive the owl presents the news: a logo intro, a news show where each story answers one question, and an outro. The logo, the presenter and the show were each worked out first as small experiments under `/labs`. The stories come from today's real news: an agent finds them with Tavily, Nemotron rewrites them for kids, FLUX draws and animates them, and Chatterbox narrates them.
+The show lives in a cozy 90s kid's bedroom you can explore in the browser. Switch on the old CRT and Olive the owl presents the day's news: each story answers one question a kid might ask, in four short illustrated steps. The stories are today's real news. An agent finds them, rewrites them for kids, draws and animates them, and narrates them.
+
+**What we used**
+
+- **Blender, driven by Claude Code over MCP**, to rebuild the bedroom from a single AI-generated reference image, then exported to glTF
+- **React, three.js, React Three Fiber and drei**, with postprocessing for the CRT effect, built with Vite
+- **FLUX 3 Image** by Black Forest Labs for the room's textures and posters
+- **FLUX 3 Klein** for the story images, with **a Balthazar style LoRA** we trained with AI Toolkit on a Nebius GPU
+- **FLUX 3 Video** to animate each story image
+- **Tavily** to find today's news
+- **NVIDIA Nemotron 3.5 Super VL** on Nebius Token Factory to rewrite the news for kids
+- **MiniCPM-V** on Nebius Token Factory to caption the LoRA's training frames
+- **Chatterbox** by Resemble AI, run locally, for Olive's voice and the narration
+
+The logo, the presenter and the show each started as a small experiment under `/labs`.
 
 <table>
   <tr>
