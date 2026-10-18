@@ -1,10 +1,10 @@
-# Retro Bedroom
+# ![Little Big Questions](docs/images/logo.svg)
 
-A cozy 90s gamer bedroom, rebuilt in Blender from a single AI-generated reference image, textured with images from FLUX, and shipped as an interactive React + three.js app. The CRT TV in the app plays a real video, switches on and off like a tube set, and the camera can fly in to watch it.
+Little Big Questions helps kids make sense of the big, sometimes scary things happening in the world. We take real news, like elections, wars, climate, or inequality, and explain it in friendly, cartoon-style stories that are honest without being frightening. The goal isn’t to shield kids from the world, but to help them understand that it’s complicated, that people see things differently, and that their questions matter.
+
+This repository is where the show is being built. It lives in a cozy 90s kid's bedroom, rebuilt in Blender from a single AI-generated reference image, textured with images from FLUX, and shipped as an interactive React + three.js app. On the bedroom's CRT, Olive the owl presents the news: a logo intro, a news show where each story answers one question, and an outro. The logo, the presenter and the show were each worked out first as small experiments under `/labs`.
 
 ![The app: overview](docs/images/app-overview.jpg)
-
-The bedroom is also the set for **Little Big Questions**, a news show that helps kids make sense of the big, sometimes scary things happening in the world (elections, wars, climate, inequality) with friendly cartoon stories that are honest without being frightening. Its logo, its presenter and the show itself were worked out as small experiments under `/labs`, and now play on the bedroom's CRT.
 
 This README walks through how we got here, step by step.
 

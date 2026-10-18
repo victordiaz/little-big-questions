@@ -323,7 +323,8 @@ body,
   position: fixed;
   top: 64px;
   right: 16px;
-  z-index: 20;
+  /* above the scene and the TV page, under the README overlay (.info-overlay, 10) */
+  z-index: 5;
   width: 290px;
   max-height: calc(100% - 140px);
   overflow-y: auto;
