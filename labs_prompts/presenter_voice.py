@@ -2,12 +2,12 @@
 # requires-python = ">=3.10"
 # dependencies = ["requests"]
 # ///
-"""Voices Olive's lines (room-viewer/src/labs/stories.json) with Chatterbox.
+"""Voices Olive's lines (room-viewer/src/labs/stories.json and news.json) with Chatterbox.
 
 Chatterbox clones the voice of a Fish Audio voice's sample clip. Start the server first
-(in ~/Development/programa_la_plaza_3d: uv run scripts/chatterbox-server.py), then:
+(uv run scripts/chatterbox-server.py), then:
 
-    FISH_API_KEY=... uv run labs_prompts/presenter_voice.py
+    uv run labs_prompts/presenter_voice.py
     uv run labs_prompts/presenter_voice.py --only war-intro --force
     uv run labs_prompts/presenter_voice.py --model multilingual --exaggeration 0.7
 
@@ -26,7 +26,8 @@ from pathlib import Path
 import requests
 
 ROOT = Path(__file__).resolve().parent.parent
-STORIES = ROOT / "room-viewer/src/labs/stories.json"
+# The evergreen stories, and today's news from news_publish.py
+STORIES = [ROOT / "room-viewer/src/labs/stories.json", ROOT / "room-viewer/src/labs/news.json"]
 OUT = ROOT / "room-viewer/public/voices/olive"
 MANIFEST = ROOT / "room-viewer/src/labs/olive-voice.json"
 # "kids" on Fish Audio: https://fish.audio/m/7c9a5cb2f8914bd1963d4237e540c036/
@@ -34,22 +35,21 @@ DEFAULT_VOICE = "7c9a5cb2f8914bd1963d4237e540c036"
 SEGMENTS = ("intro", "outro")
 
 
-def fish_key():
+def fish_headers():
+    # Public voices don't need a key; send one when it's there.
     key = os.environ.get("FISH_API_KEY")
     env = ROOT / ".env.local"
     if not key and env.exists():
         match = re.search(r"^FISH_API_KEY=(.+)$", env.read_text(), re.M)
         key = match and match[1].strip().strip("\"'")
-    if not key:
-        sys.exit("Set FISH_API_KEY (or put it in .env.local) to fetch the voice's sample")
-    return key
+    return {"Authorization": f"Bearer {key}"} if key else {}
 
 
 def sample_url(voice):
     # The sample's link is signed for an hour, so it's fetched fresh on every run.
     response = requests.get(
         f"https://api.fish.audio/model/{voice}",
-        headers={"Authorization": f"Bearer {fish_key()}"},
+        headers=fish_headers(),
         timeout=30,
     )
     response.raise_for_status()
@@ -80,7 +80,7 @@ def main():
     args = parser.parse_args()
 
     voice = re.search(r"[0-9a-f]{32}", args.voice)[0]
-    stories = json.loads(STORIES.read_text())
+    stories = [s for path in STORIES if path.exists() for s in json.loads(path.read_text())]
     manifest = json.loads(MANIFEST.read_text()) if MANIFEST.exists() else {}
 
     lines = [

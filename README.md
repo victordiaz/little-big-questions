@@ -2,7 +2,7 @@
 
 Little Big Questions helps kids make sense of the big, sometimes scary things happening in the world. We take real news, like elections, wars, climate, or inequality, and explain it in friendly, cartoon-style stories that are honest without being frightening. The goal isn’t to shield kids from the world, but to help them understand that it’s complicated, that people see things differently, and that their questions matter.
 
-This repository is where the show is being built. It lives in a cozy 90s kid's bedroom, rebuilt in Blender from a single AI-generated reference image, textured with images from FLUX, and shipped as an interactive React + three.js app. On the bedroom's CRT, Olive the owl presents the news: a logo intro, a news show where each story answers one question, and an outro. The logo, the presenter and the show were each worked out first as small experiments under `/labs`.
+This repository is where the show is being built. It lives in a cozy 90s kid's bedroom, rebuilt in Blender from a single AI-generated reference image, textured with images from FLUX, and shipped as an interactive React + three.js app. On the bedroom's CRT, Olive the owl presents the news: a logo intro, a news show where each story answers one question, and an outro. The logo, the presenter and the show were each worked out first as small experiments under `/labs`. The stories come from today's real news: an agent finds them with Tavily, Nemotron rewrites them for kids, FLUX draws and animates them, and Chatterbox narrates them.
 
 ![The app: overview](docs/images/app-overview.jpg)
 
@@ -23,9 +23,10 @@ This README walks through how we got here, step by step.
 11. [Step 10: the logo, the intro and the outro](#step-10-the-logo-the-intro-and-the-outro)
 12. [Step 11: Olive, the presenter](#step-11-olive-the-presenter)
 13. [Step 12: the show on the bedroom TV](#step-12-the-show-on-the-bedroom-tv)
-14. [Project layout](#project-layout)
-15. [Running and regenerating](#running-and-regenerating)
-16. [Credits](#credits)
+14. [Step 13: today's news, made for kids](#step-13-todays-news-made-for-kids)
+15. [Project layout](#project-layout)
+16. [Running and regenerating](#running-and-regenerating)
+17. [Credits](#credits)
 
 ## The pipeline at a glance
 
@@ -40,7 +41,7 @@ flowchart LR
     flux["FLUX 3 Image API<br/>flux_image.py"] -->|"posters, blanket,<br/>carpet, labels…"| blender
     web["Logos + press photos<br/>images/refs/"] -->|"--image references"| flux
     scene -->|"glTF export"| glb["retro_bedroom.glb"]
-    bbb["Big Buck Bunny<br/>(first 60 s)"] --> app
+    news["News pipeline<br/>news_*.py"] -->|"story videos,<br/>news.json"| app
     glb --> app["React + three.js app<br/>room-viewer/"]
 ```
 
@@ -129,6 +130,12 @@ What happened with each:
 - **NVIDIA** was moderated twice. FLUX painted only the background (a glowing chip and circuit traces), and the real logo and wordmark were pixelated and composited on top.
 - The API rejects reference images smaller than 256 × 256 px, so the long, thin wordmarks were padded onto a white canvas first.
 
+Later, three more posters joined the partner corner:
+
+- **Tavily** (the news agent's search engine) worked as a straight edit too: its arrow mark and wordmark from LobeHub Icons, flattened on white, plus the Nebius poster as the style reference. It hangs on the back wall after Black Forest Labs. Rocket and both Dragon posters moved right to make room, with the gaps evened out to 12 cm.
+- **The team** replaced the "Game Heroes" poster next to Nebius: FLUX turned a photo of the three of us into waving 16-bit heroes, with "Game Heroes" as the style reference, under the title "Little Big Questions, the team". The photo itself isn't in the repository. The object is now `PosterTeam`.
+- **NEMOTRON** was added under the NVIDIA wordmark, the same way the wordmark was: Pillow draws the word without antialiasing, scales it up 6× with nearest-neighbour so its blocks match the pixel size of the letters above, and composites it in NVIDIA green with a dark shadow (`images/room/poster_nvidia/nvidia_poster_nemotron.png`).
+
 ![Logo to poster](docs/images/brand-posters.jpg)
 
 The **DGX Spark** is a beveled champagne box at 1.4× real size (150 × 150 × 50.5 mm), so it reads next to the CRT. Its front and back are a crop of the real metal-foam front from PNY's press photos. The TV also got a **power button with an LED** and **rabbit-ear antennas** (scaled down after a first version came out too big).
@@ -171,9 +178,8 @@ flowchart TB
     Room -- "onToggleTV (click)" --> App
 ```
 
-The TV plays `public/videos/big-buck-bunny.mp4` (the first 60 s of the Blender Foundation film, 640 × 360, 3.4 MB). To play something else:
+The Video channel plays a video of your own:
 
-- change `DEFAULT_VIDEO` in `src/App.jsx`,
 - open the app with `?video=<url>` (the server must allow cross-origin loading), or
 - drag a video file onto the page.
 
@@ -219,9 +225,6 @@ sequenceDiagram
     participant TV as TVVideo
     User->>App: click "Watch TV"
     App->>Rig: shot = "watchTV"
-    Rig->>App: onTvChange(false)
-    App->>TV: on = false
-    TV-->>TV: power-off animation, pause video
     Rig->>Rig: setLookAt(floor in front of TV, animate)
     Note over Rig: camera flies in from the overview
     Rig-->>Rig: promise resolves on arrival
@@ -230,7 +233,7 @@ sequenceDiagram
     TV-->>TV: play video, power-on animation, thump + static
 ```
 
-If another shot is chosen mid-flight, a run counter discards the stale promise so the TV doesn't switch on unexpectedly. Since [step 12](#step-12-the-show-on-the-bedroom-tv), Watch TV also turns the sound on and opens the Little Big Questions programme instead of the video.
+If another shot is chosen mid-flight, a run counter discards the stale promise so the TV doesn't switch on unexpectedly. The first version also switched the set off when the move started, which made a TV that was already on flicker off and back on; now the shot only switches it on. Since [step 12](#step-12-the-show-on-the-bedroom-tv), Watch TV also turns the sound on, lights up the posters and opens the Little Big Questions programme.
 
 ### This README, inside the app
 
@@ -295,7 +298,7 @@ She is drawn for desk framing. The first version was a full owl behind a desk, a
 
 ![The studio, and the same set at 4:3 on a CRT](docs/images/presenter-studio.jpg)
 
-**The show** (`src/labs/show.jsx`) is a rundown of stories, each a single question, in `src/labs/stories.json`. Every story runs three segments:
+**The show** (`src/labs/show.jsx`) is a rundown of stories, each a single question: today's news from `src/labs/news.json` (written by `news_publish.py`), or the evergreen stories in `src/labs/stories.json` when there is no news. Every story runs three segments; a story without its own video skips the video:
 
 ```mermaid
 flowchart LR
@@ -329,7 +332,7 @@ Two dead ends came first. drei's `<Html transform>` mounted an empty box, becaus
 
 Since the picture is HTML rather than a texture, the CRT shader can't reach it, so the CRT look is redone in CSS (`.tv-feed` in `styles.css`): scanlines, glass glare, darker curved edges, a slight flicker, the dot → line → picture power animation, and a burst of static on every channel change except the outro, which cuts in clean. The trade-off is that the page always draws on top of the 3D scene, which is fine for the current camera shots.
 
-**The TV panel** (top right, `src/TVControls.jsx`) is the remote control:
+**The TV panel** (top right, `src/TVControls.jsx`) is the remote control. It's a debugging tool, so it only shows when the URL has `?debug`, and its keys only work then:
 
 | Control | What it does | Key |
 |---|---|---|
@@ -339,36 +342,86 @@ Since the picture is HTML rather than a texture, the CRT shader can't reach it, 
 | Look, Replay | pick the intro and outro look, and replay them with the jingle | `R` |
 | Story, Segment | jump to any story or segment | |
 | Prev, Running, Next | step through the show, or pause and resume it | `←` `→` space |
+| Posters | light up the team and partner posters, without going on to the TV | |
 
-`?channel=logo`, `?channel=show` or `?channel=outro` opens the app on that channel.
+`?channel=logo`, `?channel=show` or `?channel=outro` opens the app on that channel. Without one it opens on the logo. The Video channel plays a video passed with `?video=<url>` or dropped on the page.
 
-**Watch TV** now opens the whole programme:
+**Watch TV** now opens the whole programme, starting with the posters of the people who made it:
 
 ```mermaid
 sequenceDiagram
     actor User
     participant App
     participant Rig as CameraRig
+    participant Room
     participant TV as TVFeed
     User->>App: click "Watch TV"
-    App->>App: sound on, channel = Logo intro
+    App->>Rig: shot = "partners" (the poster corner)
+    App->>Room: the team poster lights up (3 s)
+    App->>Room: Nebius, NVIDIA, BFL, Tavily light up in a wave
     App->>Rig: shot = "watchTV"
-    Rig->>App: TV off, fly in, TV on
+    Rig->>App: on arrival, TV on
     App->>TV: logo intro + jingle (6 s)
-    App->>TV: News show, story 1 to 4<br/>(Olive's voice, story videos)
+    App->>TV: News show: today's stories<br/>(Olive's voice, narrated story videos)
     App->>TV: Outro + jingle, no static
+    App->>TV: TV off after 7 s
 ```
 
-The intro waits until the set is actually on, so it isn't missed during the camera move. If the camera is already at the TV, it starts right away, and picking another channel or shot cancels the hand-over to the show.
+The intro waits until the set is actually on, so it isn't missed during the camera move. Picking another channel or shot at any point cancels the rest of the sequence.
+
+**The posters light up** in `Room.jsx`: each one's image doubles as its emission, so it brightens with its own colours, and its paper backing glows warm yellow and grows a little more than the poster, which draws a glowing border even around the dark ones. Each starts 250 ms after the one before and stays lit for 700 ms, so they overlap in a wave. The materials are cloned once per mesh: React StrictMode runs the setup twice in development, and a second clone left the animation driving materials that were no longer on screen. The "partners" shot frames the corner where the five posters hang and has no button of its own.
+
+**The show ends.** After the last story's wrap-up the outro plays, Olive waves goodbye, and the set switches itself off 7 seconds later. Picking the Outro channel by hand leaves the set on.
 
 ![The programme on the bedroom TV](docs/images/tv-programme.jpg)
+
+## Step 13: today's news, made for kids
+
+The stories in the show come from the day's real news. Four scripts at the root of the repository take them from a search to the bedroom TV, each saving its work in `news/<date>/stories.json` so any step can be re-run on its own:
+
+```mermaid
+flowchart LR
+    tavily["Tavily search<br/>news of the last day"] --> agent
+    subgraph agent["news_agent.py · Nemotron 3.5 Super VL on Nebius"]
+        direction TB
+        pick["picks the most relevant<br/>international stories"] --> write["writes each for kids:<br/>3–5 steps of narration,<br/>image prompts, motion"]
+        write --> olive["Olive's intro and wrap-up,<br/>topic, mood"]
+    end
+    agent --> klein["FLUX 3 Klein<br/>one image per step"]
+    klein --> voice["news_voice.py<br/>Chatterbox, Dash's voice"]
+    voice --> video["news_video.py<br/>FLUX 3 Video, one clip per step"]
+    video --> mux["ffmpeg<br/>narration on top, clips joined"]
+    mux --> publish["news_publish.py<br/>public/news/ + news.json"]
+    publish --> oliveVoice["presenter_voice.py<br/>Olive's lines"]
+    oliveVoice --> show["the show on the TV"]
+```
+
+**Finding the news.** `news_agent.py` runs two Tavily searches (`topic: "news"`, the last day by default) and drops duplicate URLs. Nemotron 3.5 Super VL, through Nebius Token Factory's OpenAI-compatible API, plays a senior international news editor: it picks the stories with global impact and skips local news, sports, gossip and opinion. `--count` sets how many (3 by default; 1 for testing).
+
+**Writing for kids.** A second Nemotron call turns each story into 3 to 5 steps. The prompt carries the show's mission and its rules: short sentences a 7-year-old understands, hard words explained right away, facts without taking sides, no graphic details or death counts, different points of view, and the people who are helping. Each step has the narration, a self-contained image prompt (recurring characters described the same way every time, generic cartoon people instead of real politicians, no weapons or text) and a line about how the scene moves. A third call writes Olive's lines in her voice, picks the topic tab and her mood (gentle for scary news), and the accent colour follows the mood. Nemotron's answers are parsed as JSON, skipping any `<think>` block or code fence around them.
+
+**Pictures.** Each image prompt, plus a shared style line, goes to FLUX 3 Klein (`flux_image.py --model klein`) at 16:9, six at a time.
+
+**Narration.** `scripts/chatterbox-server.py` runs Chatterbox locally (copied from the voice lab project and trimmed to the English models). `news_voice.py` clones the voice of a Fish Audio voice's sample, "Dash (PBS KIDS)" by default, downloaded once into `.voices/` because the sample's link expires. It records each step's length in `stories.json`. On a Mac's CPU a 15-second line takes about a minute.
+
+**Video.** `news_video.py` makes one FLUX 3 Video clip per step in image-to-video mode, with two keyframes: the step's image as the first frame and the next step's image as the last, so the clips flow into each other instead of cutting. A clip lasts as long as its narration plus a beat, within FLUX's 5 to 20 seconds. ffmpeg then lays each step's narration over its clip, holding the last frame when the voice runs longer, and joins the clips into one video per story. Clips that exist are kept, so adding the narration later costs no FLUX credits.
+
+**Into the show.** `news_publish.py` copies the story videos to `room-viewer/public/news/` and writes `src/labs/news.json`: Olive's lines, the video, and when each step starts, for the captions. When there is news, the show's rundown is today's news and it ends after it; the evergreen stories in `stories.json` come back only when there is none. A news story's video segment plays the narrated video with sound, shows each step's narration as a caption next to Olive's corner bubble, and moves on when the video ends. A story without its own video skips straight from the intro to the wrap-up; the Big Buck Bunny placeholder is gone. `presenter_voice.py` voices Olive's new lines in her own voice, the same way as the evergreen ones.
+
+![A news story on the TV, with captions](docs/images/news-story.jpg)
 
 ## Project layout
 
 ```
 .
 ├── README.md
-├── flux_image.py            # FLUX 3 Image CLI (generate, or edit with --image)
+├── flux_image.py            # FLUX 3 Image / Klein CLI (generate, or edit with --image)
+├── news_agent.py            # Tavily + Nemotron: today's stories, written for kids, FLUX Klein images
+├── news_voice.py            # narrates each step with Chatterbox
+├── news_video.py            # FLUX 3 Video clips per step, narration on top, joined with ffmpeg
+├── news_publish.py          # puts the stories in the show (public/news/, news.json)
+├── scripts/chatterbox-server.py  # local Chatterbox TTS server on :8004
+├── news/<date>/             # stories.json, step images, voices and videos (not in git)
 ├── room_helpers.py          # bpy helpers used by every Blender snippet
 ├── labs_prompts/
 │   ├── prompts.tsv          # FLUX prompts for the labs concepts
@@ -382,7 +435,7 @@ The intro waits until the set is actually on, so it isn't missed during the came
 ├── docs/images/             # figures for this README
 └── room-viewer/             # React + three.js app
     ├── public/models/retro_bedroom.glb
-    ├── public/videos/big-buck-bunny.mp4
+    ├── public/news/             # today's story videos (news_publish.py)
     ├── public/audio/intro-jingle.mp3
     ├── public/voices/olive/ # Olive's recorded lines
     └── src/
@@ -403,8 +456,9 @@ The intro waits until the set is actually on, so it isn't missed during the came
             ├── intro.jsx        # the logo intro and the outro
             ├── sting.js         # plays the jingle
             ├── Olive.jsx        # the presenter
-            ├── show.jsx         # rundown, Newsroom, voice playback
-            ├── stories.json     # the stories and Olive's lines
+            ├── show.jsx         # rundown, Newsroom, voice playback, captions
+            ├── stories.json     # the evergreen stories and Olive's lines
+            ├── news.json        # today's news (news_publish.py)
             ├── olive-voice.json # which lines are voiced
             ├── FluxGallery.jsx  # FLUX concepts with their prompts
             ├── assets/          # generated FLUX concepts
@@ -421,7 +475,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173/` for the bedroom (press **Watch TV**) and `http://localhost:5173/labs` for the experiments.
+Open `http://localhost:5173/` for the bedroom (press **Watch TV**), `http://localhost:5173/?debug` for the TV panel, and `http://localhost:5173/labs` for the experiments.
 
 **Images.** Set `BFL_API_KEY`, then:
 
@@ -444,10 +498,24 @@ bash labs_prompts/generate.sh                    # everything
 bash labs_prompts/generate.sh presenter/owl      # one experiment or concept
 ```
 
-**Olive's voice.** Start Chatterbox (`uv run scripts/chatterbox-server.py` in the voice lab project, on `localhost:8004`), set `FISH_API_KEY`, then:
+**Today's news.** Put `TAVILY_API_KEY`, `NEBIUS_API_KEY` and `BFL_API_KEY` in the environment or in a `.env` file at the root (git ignores it; `HF_TOKEN` there speeds up Chatterbox's model downloads). Start Chatterbox in another terminal, then run the steps in order:
 
 ```sh
-uv run labs_prompts/presenter_voice.py                       # only new or changed lines
+uv run scripts/chatterbox-server.py         # keep it running, on localhost:8004
+
+uv run news_agent.py --count 1              # find, pick and write the stories, draw the steps
+uv run news_voice.py                        # narrate each step
+uv run news_video.py                        # animate, add the narration, join
+uv run news_publish.py                      # into the show
+uv run labs_prompts/presenter_voice.py      # Olive's new lines
+```
+
+Each script works on the latest `news/<date>/stories.json` and skips what's already done. Useful options: `news_agent.py --no-images` to tune the writing first, `--only <story-id>` and `--force` on the voice and video scripts, and `news_video.py --audio` to let FLUX add its own sound under the narration.
+
+**Olive's voice.** With Chatterbox running:
+
+```sh
+uv run labs_prompts/presenter_voice.py                       # only new or changed lines, stories and news
 uv run labs_prompts/presenter_voice.py --only war-intro --force
 uv run labs_prompts/presenter_voice.py --model multilingual --exaggeration 0.7
 ```
@@ -465,10 +533,11 @@ bpy.ops.export_scene.gltf(
 
 ## Credits
 
-- **Big Buck Bunny** © Blender Foundation, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), from [peach.blender.org](https://peach.blender.org/).
 - **DGX Spark** product photos from the [PNY press image kit](https://www.pny.com/company/press-center/press-images/nvidia-dgx-spark).
-- **Logos** from [Dashboard Icons](https://dashboardicons.com/) and [LobeHub Icons](https://lobehub.com/icons). NVIDIA, DGX Spark, Nebius and Black Forest Labs are trademarks of their respective owners and are used here for a personal, non-commercial scene.
-- **Posters, textures and labs concepts** generated with [FLUX 3 Image](https://docs.bfl.ai/) by Black Forest Labs.
+- **Logos** from [Dashboard Icons](https://dashboardicons.com/) and [LobeHub Icons](https://lobehub.com/icons). NVIDIA, DGX Spark, Nemotron, Nebius, Black Forest Labs and Tavily are trademarks of their respective owners and are used here for a personal, non-commercial scene.
+- **Posters, textures and labs concepts** generated with [FLUX 3 Image](https://docs.bfl.ai/) by Black Forest Labs; story images with FLUX 3 Klein and story videos with FLUX 3 Video.
+- **News** found with [Tavily](https://www.tavily.com/) and written for kids by NVIDIA Nemotron 3.5 Super VL on [Nebius Token Factory](https://nebius.com/).
+- **Voices** made with [Chatterbox](https://github.com/resemble-ai/chatterbox), cloning the samples of the Fish Audio voices "kids" (Olive) and "Dash (PBS KIDS)" (the narrator).
 - **Jingle**: "Positive Orchestral Jingle" by sergequadrado, [Freesound #455606](https://freesound.org/s/455606/).
 - **Olive's voice** made with [Chatterbox](https://github.com/resemble-ai/chatterbox) by Resemble AI, cloned from the sample of the [Fish Audio voice "kids"](https://fish.audio/m/7c9a5cb2f8914bd1963d4237e540c036/).
 - **Fonts**: [Fredoka](https://fonts.google.com/specimen/Fredoka), [Nunito](https://fonts.google.com/specimen/Nunito) and [Press Start 2P](https://fonts.google.com/specimen/Press+Start+2P) from Google Fonts.

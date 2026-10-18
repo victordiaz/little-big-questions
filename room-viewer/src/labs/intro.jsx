@@ -7,6 +7,9 @@ import Olive from './Olive.jsx'
 // How long the intro runs before the show cuts to the next thing: the ~4.4 s animation
 // (and the 4 s jingle) plus a moment holding on the logo.
 export const INTRO_SECONDS = 6
+// How long the outro holds before the TV switches off at the end of the show: Olive's ~5.6 s
+// wave goodbye plus a moment on the logo.
+export const OUTRO_SECONDS = 7
 
 // Looks for the bumpers. Same timeline, different paint.
 export const THEMES = {

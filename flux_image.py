@@ -7,6 +7,7 @@
 Usage:
     export BFL_API_KEY=...
     uv run flux_image.py "a red fox in fresh snow" --aspect-ratio 16:9 --out images
+    uv run flux_image.py "a red fox in fresh snow" --model klein
     uv run flux_image.py "Turn <ref_image_0> into pixel art" --image photo.png --out images
 """
 import argparse
@@ -18,7 +19,10 @@ from pathlib import Path
 
 import requests
 
-API_URL = "https://api.bfl.ai/v1/flux-3-image"
+API_URLS = {
+    "image": "https://api.bfl.ai/v1/flux-3-image",
+    "klein": "https://api.bfl.ai/v1/flux-3-image-klein",
+}
 IN_PROGRESS = {"Pending", "Reasoning", "Generating"}
 
 
@@ -38,18 +42,11 @@ def encode_image(ref):
     return base64.b64encode(Path(ref).read_bytes()).decode()
 
 
-def generate(prompt, api_key, aspect_ratio=None, resolution=None, images=None, timeout=600):
-    body = {"prompt": prompt}
-    if images:
-        body["images"] = [encode_image(i) for i in images]
-    if aspect_ratio:
-        body["aspect_ratio"] = aspect_ratio
-    if resolution:
-        body["resolution"] = resolution
-
+def run_task(url, body, api_key, timeout=600):
+    """Submits a BFL task and polls until its result is ready (images and videos alike)."""
     # Submit generation request
     response = as_json(requests.post(
-        API_URL,
+        url,
         headers={
             "accept": "application/json",
             "x-key": api_key,
@@ -81,6 +78,19 @@ def generate(prompt, api_key, aspect_ratio=None, resolution=None, images=None, t
     raise SystemExit(f"Timed out after {timeout}s")
 
 
+def generate(prompt, api_key, aspect_ratio=None, resolution=None, images=None, timeout=600,
+             model="image"):
+    body = {"prompt": prompt}
+    if images:
+        body["images"] = [encode_image(i) for i in images]
+    if aspect_ratio:
+        body["aspect_ratio"] = aspect_ratio
+    if resolution:
+        body["resolution"] = resolution
+
+    return run_task(API_URLS[model], body, api_key, timeout)
+
+
 def download(url, out_dir, prompt):
     # The signed URL expires after an hour; don't send the x-key header to it.
     response = requests.get(url, timeout=120)
@@ -99,6 +109,8 @@ def main():
     parser.add_argument("--aspect-ratio", help='e.g. "16:9", "1:1"')
     parser.add_argument("--resolution", help='e.g. "4k"')
     parser.add_argument("--out", default="images", help="output directory")
+    parser.add_argument("--model", choices=API_URLS, default="image",
+                        help="FLUX 3 Image, or the faster and cheaper FLUX 3 Klein")
     parser.add_argument("--image", action="append", help="reference image path or URL "
                         "(repeatable, up to 10; refer to them as <ref_image_0>, ... in the prompt)")
     args = parser.parse_args()
@@ -107,7 +119,8 @@ def main():
     if not api_key:
         raise SystemExit("Set BFL_API_KEY first")
 
-    result = generate(args.prompt, api_key, args.aspect_ratio, args.resolution, args.image)
+    result = generate(args.prompt, api_key, args.aspect_ratio, args.resolution, args.image,
+                      model=args.model)
     print(f"Image URL: {result['sample']}")
     path = download(result["sample"], args.out, args.prompt)
     print(f"Saved: {path}")

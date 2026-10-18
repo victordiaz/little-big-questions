@@ -14,12 +14,24 @@ const NO_SHADOW = new Set(['WinPane'])
 // Clicking any of these toggles the TV.
 const TV_PARTS = new Set(['TVBody', 'TVBack', 'TVScreenImg', 'TVPowerButton', 'TVPowerLED', 'TVBezelBtns'])
 
+// The posters that light up at the start of Watch TV (see App.jsx): the team first, on its own,
+// then the partners in a wave.
+export const HIGHLIGHT_POSTERS = ['PosterTeam', 'PosterNebius', 'PosterNvidia', 'PosterBFL', 'PosterTavily']
+// How much a highlighted poster glows and grows. Its backing frame (<name>Backing) lights up
+// warm, so the highlight reads even on the dark posters.
+const POSTER_GLOW = 0.9
+const POSTER_POP = 0.08
+// The frame grows more than the poster, so a glowing border shows around it.
+const FRAME_POP = 0.16
+const FRAME_GLOW = new THREE.Color('#ffc93c').multiplyScalar(2.5)
+
 const LED_ON = new THREE.Color(0.2, 2.5, 0.4)
 const LED_OFF = new THREE.Color(0.25, 0.02, 0.02)
 
 // `feedEl`, when given, is a DOM element with live HTML (the logo intro or the news show, rendered
 // into it by App through a portal) that is shown on the TV instead of the video.
-export default function Room({ videoSrc, feedEl, muted, tvOn, onToggleTV }) {
+// `lit`: the names of the partner posters lit up right now.
+export default function Room({ videoSrc, feedEl, muted, tvOn, onToggleTV, lit = [] }) {
   const { scene } = useGLTF(MODEL_URL)
   const [hoverTV, setHoverTV] = useState(false)
 
@@ -40,6 +52,52 @@ export default function Room({ videoSrc, feedEl, muted, tvOn, onToggleTV }) {
       }
     })
   }, [scene])
+
+  // Each partner poster lights up with its own image (the map doubles as emission), its frame
+  // glows and both grow a little, easing in and out. Materials are cloned so nothing else that
+  // shares them lights up, once per mesh: StrictMode runs this twice, and a second clone would
+  // leave us animating materials that are no longer on screen.
+  const posters = useMemo(() => {
+    const glowing = (obj, color, map) => {
+      const materials = []
+      obj?.traverse((o) => {
+        if (!o.isMesh) return
+        if (!o.userData.glow) {
+          const m = o.material.clone()
+          m.emissive = color.clone()
+          m.emissiveMap = map ? m.map : null
+          m.emissiveIntensity = 0
+          o.material = o.userData.glow = m
+        }
+        materials.push(o.userData.glow)
+      })
+      return materials
+    }
+    return HIGHLIGHT_POSTERS.map((name) => [scene.getObjectByName(name), scene.getObjectByName(`${name}Backing`)])
+      .filter(([poster]) => poster)
+      .map(([poster, frame]) => ({
+        name: poster.name,
+        parts: [
+          { obj: poster, scale: poster.scale.clone(), pop: POSTER_POP },
+          frame && { obj: frame, scale: frame.scale.clone(), pop: FRAME_POP },
+        ].filter(Boolean),
+        image: glowing(poster, new THREE.Color(1, 1, 1), true),
+        frame: glowing(frame, FRAME_GLOW, false),
+        k: 0,
+      }))
+  }, [scene])
+
+  useFrame((_, dt) => {
+    for (const p of posters) {
+      const target = lit.includes(p.name) ? 1 : 0
+      if (p.k === target) continue
+      p.k += (target - p.k) * Math.min(1, dt * 14)
+      if (Math.abs(target - p.k) < 0.001) p.k = target
+      for (const m of p.image) m.emissiveIntensity = POSTER_GLOW * p.k
+      for (const m of p.frame) m.emissiveIntensity = p.k
+      for (const { obj, scale, pop } of p.parts) obj.scale.copy(scale).multiplyScalar(1 + pop * p.k)
+    }
+  })
 
   const screen = useMemo(() => scene.getObjectByName('TVScreenImg'), [scene])
   const led = useMemo(() => scene.getObjectByName('TVPowerLED'), [scene])

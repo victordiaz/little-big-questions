@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Lockup, LogoMark } from './brand.jsx'
 import Olive from './Olive.jsx'
+import { SAMPLE_VIDEO } from './show.jsx'
 
 const LAYOUTS = [
   { id: 'stacked', label: 'Stacked', use: 'Title and end cards, merch' },
@@ -26,7 +27,6 @@ const BUGS = {
   pill: 'On a pill',
 }
 
-const STORY_VIDEO = '/videos/big-buck-bunny.mp4'
 
 export default function Lockups() {
   return (
@@ -92,7 +92,7 @@ export default function Lockups() {
           <CornerBug />
           <Use title="Lower third" note="One-line lockup in the tab, the question gets the space.">
             <div className="use-frame use-lt">
-              <video src={STORY_VIDEO} muted autoPlay loop playsInline />
+              <video src={SAMPLE_VIDEO} muted autoPlay loop playsInline />
               <div className="use-lt-bar">
                 <span className="use-lt-tab">
                   <Lockup layout="inline" tone="reverse" size={15} />
@@ -192,7 +192,7 @@ function CornerBug() {
       note="Sits on every frame of the show. White on video so it never fights the picture; the pill is for bright or busy footage."
     >
       <div className="use-frame use-bug">
-        <video src={STORY_VIDEO} muted autoPlay loop playsInline />
+        <video src={SAMPLE_VIDEO} muted autoPlay loop playsInline />
         <div className={`bug-x at-${corner} bug-${style}`} key={`${corner}-${style}`}>
           {style === 'mark' && <LogoMark size={34} tone="mono-white" face={false} spin={false} />}
           {style === 'name' && <Lockup layout="horizontal" tone="mono-white" size={17} face={false} spin={false} />}

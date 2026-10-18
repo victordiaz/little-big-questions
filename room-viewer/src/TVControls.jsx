@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { THEMES } from './labs/intro.jsx'
-import { SEGMENTS, STORIES } from './labs/show.jsx'
+import { STORIES, segmentsFor } from './labs/show.jsx'
 
 export const CHANNELS = {
   video: 'Video',
@@ -13,7 +13,19 @@ export const CHANNELS = {
  * Remote control for the bedroom TV: pick a channel, then drive the logo intro or the news show.
  * Keys: 1-4 channels, ← → step the show, space pauses/runs it, R replays the intro or outro.
  */
-export default function TVControls({ channel, onChannel, show, logo, tvOn, onToggleTV, muted, onToggleSound, onWatch }) {
+export default function TVControls({
+  channel,
+  onChannel,
+  show,
+  logo,
+  tvOn,
+  onToggleTV,
+  muted,
+  onToggleSound,
+  onWatch,
+  onHighlightPosters,
+  highlighting,
+}) {
   useEffect(() => {
     const onKey = (e) => {
       if (e.target.closest?.('input, textarea')) return
@@ -88,7 +100,7 @@ export default function TVControls({ channel, onChannel, show, logo, tvOn, onTog
           </div>
           <p className="tvc-label">Segment</p>
           <div className="tvc-seg">
-            {SEGMENTS.map((x) => (
+            {segmentsFor(show.story).map((x) => (
               <button key={x.id} className={x.id === show.segment ? 'active' : ''} onClick={() => show.setSegment(x.id)}>
                 {x.label.replace(' at the desk', '')}
               </button>
@@ -108,7 +120,12 @@ export default function TVControls({ channel, onChannel, show, logo, tvOn, onTog
         </>
       )}
 
-      {channel === 'video' && <p className="tvc-note">Drop a video file on the page to play it here.</p>}
+      <p className="tvc-label">Posters</p>
+      <button className={`tvc-wide ${highlighting ? 'active' : ''}`} onClick={onHighlightPosters}>
+        Highlight the team and partners
+      </button>
+
+      {channel === 'video' && <p className="tvc-note">Drop a video file on the page, or open the app with ?video=&lt;url&gt;, to play it here.</p>}
     </aside>
   )
 }

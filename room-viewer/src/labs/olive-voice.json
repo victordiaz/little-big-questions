@@ -46,5 +46,17 @@
     "seconds": 4.72,
     "voice": "7c9a5cb2f8914bd1963d4237e540c036",
     "model": "turbo"
+  },
+  "why-are-ukraine-and-russia-fighting-intro": {
+    "text": "This can feel scary, so let's go slowly. Two countries, Ukraine and Russia, are fighting—and we're wondering why.",
+    "seconds": 7.36,
+    "voice": "7c9a5cb2f8914bd1963d4237e540c036",
+    "model": "turbo"
+  },
+  "why-are-ukraine-and-russia-fighting-outro": {
+    "text": "People see this differently, and many grown-ups are working to keep everyone safe. If you feel worried, talking to a grown-up you trust can help—what do you think could help people get along again?",
+    "seconds": 10.92,
+    "voice": "7c9a5cb2f8914bd1963d4237e540c036",
+    "model": "turbo"
   }
 }

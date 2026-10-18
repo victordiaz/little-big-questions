@@ -6,22 +6,29 @@ import storiesJson from './stories.json'
 // The news show: the rundown of stories, the logic that steps through it, and the studio that
 // renders it. Used by /labs/presenter and by the bedroom TV in the main app.
 
-// Placeholder story video until each story has its own. Lives in public/videos.
-const STORY_VIDEO = '/videos/big-buck-bunny.mp4'
-const VIDEO_SECONDS = 12
-
 // A show is a rundown of stories. Each story runs three segments:
 //   intro  - Olive at the desk asks the question and sets it up
 //   video  - the story video takes the screen, Olive stays in a corner bubble
 //   outro  - back to the desk: different views, and "your questions matter"
 // The lines live in stories.json so labs_prompts/presenter_voice.py can voice them.
-export const STORIES = storiesJson
+// When there's news (news.json, from news_publish.py) the rundown is today's news, each story
+// with its own narrated video and the `chapters` that caption it, and the show ends after it.
+// Without news it falls back to the evergreen stories. A glob, so the show still works before
+// the file exists.
+const NEWS = Object.values(import.meta.glob('./news.json', { eager: true, import: 'default' }))[0] ?? []
+export const STORIES = NEWS.length ? NEWS : storiesJson
 
 export const SEGMENTS = [
   { id: 'intro', label: 'Intro at the desk' },
   { id: 'video', label: 'Story video' },
   { id: 'outro', label: 'Wrap-up' },
 ]
+
+// A story without its own video (the evergreen ones) goes straight from intro to wrap-up.
+export const segmentsFor = (story) => SEGMENTS.filter((x) => x.id !== 'video' || story.video)
+
+// A story video to show the logo over in the labs, if there's news.
+export const SAMPLE_VIDEO = NEWS.find((s) => s.video)?.video
 
 
 // Where the show is in the rundown, and how to move through it. `onEnd` runs when the last
@@ -39,16 +46,18 @@ export function useShow({ onEnd } = {}) {
   }, [])
 
   const next = useCallback(() => {
-    const s = SEGMENTS.findIndex((x) => x.id === segment)
-    if (s < SEGMENTS.length - 1) setSegment(SEGMENTS[s + 1].id)
+    const segs = segmentsFor(STORIES[storyIdx])
+    const s = segs.findIndex((x) => x.id === segment)
+    if (s < segs.length - 1) setSegment(segs[s + 1].id)
     else if (storyIdx < STORIES.length - 1) goStory(storyIdx + 1)
     else if (onEndRef.current) onEndRef.current()
     else setAuto(false)
   }, [segment, storyIdx, goStory])
 
   const prev = useCallback(() => {
-    const s = SEGMENTS.findIndex((x) => x.id === segment)
-    if (s > 0) setSegment(SEGMENTS[s - 1].id)
+    const segs = segmentsFor(STORIES[storyIdx])
+    const s = segs.findIndex((x) => x.id === segment)
+    if (s > 0) setSegment(segs[s - 1].id)
     else if (storyIdx > 0) {
       setStoryIdx(storyIdx - 1)
       setSegment(SEGMENTS.at(-1).id)
@@ -58,34 +67,50 @@ export function useShow({ onEnd } = {}) {
   return { story: STORIES[storyIdx], storyIdx, segment, auto, setAuto, setSegment, goStory, next, prev }
 }
 
-// `voice`: play Olive's recorded lines (labs_prompts/presenter_voice.py) when they exist.
+// `voice`: play Olive's recorded lines (labs_prompts/presenter_voice.py) when they exist, and
+// the narration of a news story's video.
 export function Newsroom({ story, segment, auto, onDone, voice = false }) {
   const line = segment === 'intro' ? story.intro : segment === 'outro' ? story.outro : ''
   const key = `${story.id}-${segment}`
   const { typed, talking } = useLine(line, key, voice ? voiceFor(key, line) : null)
   const videoRef = useRef(null)
+  const [videoTime, setVideoTime] = useState(0)
+  const onDoneRef = useRef(onDone)
+  onDoneRef.current = onDone
 
-  // Advance on its own when "Run the show" is on: after a line is finished, or after the video.
+  // Advance on its own when "Run the show" is on: after a line is finished, or when the story
+  // video ends (its onEnded below).
   useEffect(() => {
-    if (!auto) return
-    if (segment === 'video') {
-      const t = setTimeout(onDone, VIDEO_SECONDS * 1000)
-      return () => clearTimeout(t)
-    }
-    if (!talking) {
-      const t = setTimeout(onDone, segment === 'outro' ? 3000 : 1500)
-      return () => clearTimeout(t)
-    }
+    if (!auto || segment === 'video' || talking) return
+    const t = setTimeout(onDone, segment === 'outro' ? 3000 : 1500)
+    return () => clearTimeout(t)
   }, [auto, segment, talking, onDone])
+
+  // The narration is the video's sound, on when the show's sound is.
+  const sound = Boolean(story.video && story.narrated) && voice
+  const soundRef = useRef(sound)
+  soundRef.current = sound
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.muted = !sound
+  }, [sound])
 
   useEffect(() => {
     const v = videoRef.current
     if (!v) return
-    if (segment === 'video') {
-      v.currentTime = 0
+    if (segment !== 'video') return v.pause()
+    v.currentTime = 0
+    setVideoTime(0)
+    // If the browser won't play sound yet, play it muted rather than not at all; the captions
+    // still tell the story.
+    v.muted = !soundRef.current
+    v.play().catch(() => {
+      v.muted = true
       v.play().catch(() => {})
-    } else v.pause()
+    })
   }, [segment, story.id])
+
+  // The caption for the narration playing now: the last chapter that has started.
+  const chapter = segment === 'video' ? (story.chapters ?? []).findLast((c) => c.start <= videoTime) : null
 
   const mood = segment === 'outro' && story.mood !== 'gentle' ? 'happy' : story.mood
 
@@ -107,7 +132,15 @@ export function Newsroom({ story, segment, auto, onDone, voice = false }) {
             <Globe r={50} />
           </svg>
         </div>
-        <video ref={videoRef} src={STORY_VIDEO} muted playsInline loop preload="metadata" />
+        <video
+          ref={videoRef}
+          src={story.video}
+          muted
+          playsInline
+          preload="metadata"
+          onTimeUpdate={(e) => setVideoTime(e.currentTarget.currentTime)}
+          onEnded={() => auto && segment === 'video' && onDoneRef.current()}
+        />
       </div>
 
       {/* Olive and the desk move as one, so her hands always rest on the desk edge. */}
@@ -122,7 +155,7 @@ export function Newsroom({ story, segment, auto, onDone, voice = false }) {
 
       <div className="bug">
         <LogoMark size={22} face={false} spin={false} />
-        <span>Today’s question</span>
+        <span>{story.date ? 'Today’s news' : 'Today’s question'}</span>
       </div>
 
       <div className="lower-third" key={`${story.id}-lt`}>
@@ -140,6 +173,13 @@ export function Newsroom({ story, segment, auto, onDone, voice = false }) {
             </span>
             <span className="sub-typed">{typed}</span>
           </span>
+        </div>
+      )}
+
+      {chapter && (
+        <div className="subtitle caption" key={`${story.id}-${chapter.start}`}>
+          <b>Today’s story</b>
+          <span className="sub-text">{chapter.text}</span>
         </div>
       )}
 

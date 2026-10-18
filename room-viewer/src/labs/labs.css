@@ -1770,6 +1770,25 @@
   transition-delay: 0.6s;
 }
 
+/* the narration's captions over a news story's video, beside Olive's corner bubble */
+.subtitle.caption {
+  left: 36%;
+  right: 3%;
+  top: auto;
+  bottom: 9%;
+  z-index: 7;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.subtitle.caption::before {
+  display: none;
+}
+
+/* the captions take the lower third's place */
+.stage:has(.caption) .lower-third {
+  opacity: 0;
+}
+
 /* segment: wrap-up, the camera pushes in a little on Olive */
 .stage.seg-outro .set-anchor {
   transform: scale(1.05);

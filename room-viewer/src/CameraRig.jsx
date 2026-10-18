@@ -12,7 +12,8 @@ const VIEW_H = 6
 
 /**
  * Camera shots. `position`/`target` in three.js space; `tvBefore`/`tvAfter` switch the TV
- * when the move starts / once the camera has arrived. Overview and orbit are fitted to the window.
+ * when the move starts / once the camera has arrived; `hidden` shots get no button. Overview and
+ * orbit are fitted to the window.
  */
 export const SHOTS = {
   overview: { label: 'Overview', smoothTime: 0.9 },
@@ -22,13 +23,16 @@ export const SHOTS = {
     position: [2.1, 0.95, -2.5],
     target: [0.5, 1.14, -2.6],
     smoothTime: 1.1,
-    tvBefore: false,
+    // switches the set on once seated; one that's already on stays on
     tvAfter: true,
   },
   posters: { label: 'Posters', position: [1.9, 1.55, 0.9], target: [1.9, 1.7, -4], smoothTime: 0.9 },
   dgx: { label: 'DGX Spark', position: [1.05, 1.2, -1.6], target: [0.3, 0.97, -2.15], smoothTime: 0.9 },
   bed: { label: 'From bed', position: [3.45, 1.15, -3.55], target: [0.5, 1.1, -2.6], smoothTime: 1.0 },
   orbit: { label: 'Orbit', smoothTime: 0.9 },
+  // the corner with the team poster and the Nebius, NVIDIA, Black Forest Labs and Tavily posters;
+  // used by Highlight posters, so it has no button of its own
+  partners: { label: 'Partners', position: [3.3, 1.65, -0.55], target: [0.75, 1.65, -3.55], smoothTime: 0.9, hidden: true },
 }
 
 function overviewPose(camera, size) {

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import FluxGallery, { fluxImage } from './FluxGallery.jsx'
-import { Newsroom, SEGMENTS, STORIES, useShow } from './show.jsx'
+import { Newsroom, STORIES, segmentsFor, useShow } from './show.jsx'
 
 const VIEWS = {
   studio: 'Studio 16:9',
@@ -66,7 +66,7 @@ export default function PresenterLab() {
                   </button>
                   {i === storyIdx && (
                     <div className="rd-segs">
-                      {SEGMENTS.map((x) => (
+                      {segmentsFor(s).map((x) => (
                         <button key={x.id} className={x.id === segment ? 'active' : ''} onClick={() => setSegment(x.id)}>
                           {x.label}
                         </button>

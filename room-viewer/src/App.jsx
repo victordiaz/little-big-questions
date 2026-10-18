@@ -1,39 +1,54 @@
-import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import * as THREE from 'three'
 import { Canvas } from '@react-three/fiber'
 import { Loader } from '@react-three/drei'
 import { EffectComposer, N8AO, ToneMapping } from '@react-three/postprocessing'
 import { ToneMappingMode } from 'postprocessing'
-import Room from './Room.jsx'
+import Room, { HIGHLIGHT_POSTERS } from './Room.jsx'
 import CameraRig, { SHOTS } from './CameraRig.jsx'
 import InfoPanel from './InfoPanel.jsx'
 import TVControls, { CHANNELS } from './TVControls.jsx'
-import { INTRO_SECONDS, Intro, Outro } from './labs/intro.jsx'
+import { INTRO_SECONDS, OUTRO_SECONDS, Intro, Outro } from './labs/intro.jsx'
 import { Newsroom, useShow } from './labs/show.jsx'
 import { playSting } from './labs/sting.js'
 import './labs/labs.css'
 
-// Default TV video. Override with ?video=<url>, or drop a video file on the page.
-const DEFAULT_VIDEO = '/videos/big-buck-bunny.mp4'
-// Start on a channel with ?channel=video|logo|show
+// Highlight posters: time for the camera to reach the posters (when it isn't there yet), then
+// the team poster lights up on its own for TEAM_HOLD, then the partners light up staggered: each
+// starts STAGGER after the last and stays lit for HOLD. Watch TV moves on to the TV after a beat.
+const POSTER_LEAD_MS = 1000
+const TEAM_HOLD_MS = 3000
+const POSTER_STAGGER_MS = 250
+const POSTER_HOLD_MS = 700
+const POSTER_AFTER_MS = 300
+
+// The Video channel plays ?video=<url>, or a video file dropped on the page.
+// Start on a channel with ?channel=video|logo|show (default: the logo, until Watch TV starts
+// the programme).
 const START_CHANNEL = new URLSearchParams(window.location.search).get('channel')
+// The TV panel (channels, the show's rundown, posters) only shows with ?debug.
+const DEBUG = new URLSearchParams(window.location.search).has('debug')
 
 export default function App() {
-  const [videoSrc, setVideoSrc] = useState(
-    () => new URLSearchParams(window.location.search).get('video') || DEFAULT_VIDEO,
-  )
+  const [videoSrc, setVideoSrc] = useState(() => new URLSearchParams(window.location.search).get('video'))
   const [muted, setMuted] = useState(true)
   // The set starts off: Watch TV (or the power button) switches it on
   const [tvOn, setTvOn] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [shot, setShot] = useState('overview')
   const [infoOpen, setInfoOpen] = useState(false)
-  const [channel, setChannel] = useState(START_CHANNEL in CHANNELS ? START_CHANNEL : 'video')
+  const [channel, setChannel] = useState(START_CHANNEL in CHANNELS ? START_CHANNEL : 'logo')
   const [logoTheme, setLogoTheme] = useState('studio')
   const [logoTake, setLogoTake] = useState(0)
-  // after the last story the show rolls the outro
-  const show = useShow({ onEnd: () => changeChannel('outro') })
+  // After the last story the show rolls the outro, then the set switches off (closing).
+  const [closing, setClosing] = useState(false)
+  const show = useShow({
+    onEnd: () => {
+      changeChannel('outro')
+      setClosing(true)
+    },
+  })
 
   const replayLogo = () => {
     setLogoTake((t) => t + 1)
@@ -47,35 +62,65 @@ export default function App() {
       playSting()
     }
   }
-  // Watch TV opens the programme: the logo intro once the set is on, then the news show.
-  // null, or where it's up to: 'off' and 'on' wait for the camera move to switch the set off
-  // and back on (see SHOTS.watchTV), 'intro' plays the logo.
+  // Highlight posters: go to the posters, light up the team, then Nebius, NVIDIA, Black Forest
+  // Labs and Tavily in a staggered wave, then `then()` (Watch TV goes on to the TV). Pressing it
+  // again starts over; picking another shot or channel stops it.
+  const [lit, setLit] = useState([])
+  const highlightTimers = useRef([])
+  const stopPosters = () => {
+    highlightTimers.current.forEach(clearTimeout)
+    highlightTimers.current = []
+    setLit([])
+  }
+  const highlightPosters = (then) => {
+    stopPosters()
+    const lead = shot === 'partners' ? 0 : POSTER_LEAD_MS
+    setOpening(null)
+    setShot('partners')
+    const [team, ...partners] = HIGHLIGHT_POSTERS
+    const light = (name, on, off) => [
+      setTimeout(() => setLit((l) => [...l, name]), on),
+      setTimeout(() => setLit((l) => l.filter((n) => n !== name)), off),
+    ]
+    const wave = lead + TEAM_HOLD_MS
+    const end = wave + (partners.length - 1) * POSTER_STAGGER_MS + POSTER_HOLD_MS
+    highlightTimers.current = [
+      ...light(team, lead, wave),
+      ...partners.flatMap((name, i) => light(name, wave + i * POSTER_STAGGER_MS, wave + i * POSTER_STAGGER_MS + POSTER_HOLD_MS)),
+      ...(then ? [setTimeout(then, end + POSTER_AFTER_MS)] : []),
+    ]
+  }
+  useEffect(() => () => highlightTimers.current.forEach(clearTimeout), [])
+
+  // Watch TV opens the programme: the team and partner posters, then the camera sits down in front
+  // of the TV, the logo intro plays once the set is on, then the news show.
+  // null, or where it's up to: 'seating' waits for the camera to arrive and switch the set on
+  // (see SHOTS.watchTV), 'intro' plays the logo.
   const [opening, setOpening] = useState(null)
   const watchTV = () => {
     // watching means listening: the jingle and Olive's voice need sound
     setMuted(false)
-    setChannel('logo')
-    if (shot === 'watchTV') {
-      setTvOn(true)
-      setOpening('intro')
-    } else {
+    setClosing(false)
+    highlightPosters(() => {
       setShot('watchTV')
-      setOpening('off')
-    }
+      setOpening('seating')
+    })
   }
   const pickShot = (key) => {
     if (key === 'watchTV') return watchTV()
+    stopPosters()
     setOpening(null)
     setShot(key)
   }
-
-  useEffect(() => {
-    if (opening === 'off' && !tvOn) setOpening('on')
-    else if (opening === 'on' && tvOn) setOpening('intro')
-  }, [opening, tvOn])
+  // The camera switches the set on when it arrives; that's the opening's cue for the intro.
+  const onCameraTv = (on) => {
+    setTvOn(on)
+    if (on) setOpening((o) => (o === 'seating' ? 'intro' : o))
+  }
 
   useEffect(() => {
     if (opening !== 'intro') return
+    setChannel('logo')
     setLogoTake((t) => t + 1)
     if (!muted) playSting()
     const timer = setTimeout(() => {
@@ -89,8 +134,20 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opening])
 
+  // The end of the show: once the outro has played, switch the set off.
+  useEffect(() => {
+    if (!closing || channel !== 'outro' || !tvOn) return
+    const timer = setTimeout(() => {
+      setClosing(false)
+      setTvOn(false)
+    }, OUTRO_SECONDS * 1000)
+    return () => clearTimeout(timer)
+  }, [closing, channel, tvOn])
+
   const changeChannel = (next) => {
+    stopPosters()
     setOpening(null)
+    setClosing(false)
     setChannel(next)
     setTvOn(true)
     // the bumpers (logo intro, outro) start from the top, with the jingle
@@ -124,7 +181,7 @@ export default function App() {
     ) : null
 
   useEffect(() => {
-    if (!videoSrc.startsWith('blob:')) return
+    if (!videoSrc?.startsWith('blob:')) return
     return () => URL.revokeObjectURL(videoSrc)
   }, [videoSrc])
 
@@ -154,7 +211,7 @@ export default function App() {
         dpr={[1, 2]}
       >
         <color attach="background" args={['#6a6188']} />
-        <CameraRig shot={shot} onTvChange={setTvOn} />
+        <CameraRig shot={shot} onTvChange={onCameraTv} />
         <Lights />
         <Suspense fallback={null}>
           <Room
@@ -163,6 +220,7 @@ export default function App() {
             muted={muted}
             tvOn={tvOn}
             onToggleTV={() => setTvOn((on) => !on)}
+            lit={lit}
           />
         </Suspense>
         {/* Stand-in for Blender's raytraced AO/GI: darkens corners, under furniture and wall joins.
@@ -175,7 +233,7 @@ export default function App() {
       <Loader />
 
       <div className="shots">
-        {Object.entries(SHOTS).map(([key, s]) => (
+        {Object.entries(SHOTS).filter(([, s]) => !s.hidden).map(([key, s]) => (
           <button key={key} className={key === shot ? 'active' : ''} onClick={() => pickShot(key)}>
             {s.label}
           </button>
@@ -195,17 +253,21 @@ export default function App() {
           </>,
           feedEl,
         )}
-      <TVControls
-        channel={channel}
-        onChannel={changeChannel}
-        show={show}
-        logo={logo}
-        tvOn={tvOn}
-        onToggleTV={() => setTvOn((on) => !on)}
-        muted={muted}
-        onToggleSound={toggleSound}
-        onWatch={watchTV}
-      />
+      {DEBUG && (
+        <TVControls
+          channel={channel}
+          onChannel={changeChannel}
+          show={show}
+          logo={logo}
+          tvOn={tvOn}
+          onToggleTV={() => setTvOn((on) => !on)}
+          muted={muted}
+          onToggleSound={toggleSound}
+          onWatch={watchTV}
+          onHighlightPosters={() => highlightPosters()}
+          highlighting={lit.length > 0}
+        />
+      )}
       <button className="info-button" onClick={() => setInfoOpen(true)} aria-label="How this was made">
         i
       </button>
