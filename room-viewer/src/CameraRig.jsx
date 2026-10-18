@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
 import { CameraControls } from '@react-three/drei'
 
 // Room centre in three.js space (Blender Z-up, exported as Y-up: x, z, -y).
@@ -12,13 +12,15 @@ const VIEW_H = 6
 
 /**
  * Camera shots. `position`/`target` in three.js space; `tvBefore`/`tvAfter` switch the TV
- * when the move starts / once the camera has arrived; `hidden` shots get no button. Overview and
- * orbit are fitted to the window.
+ * when the move starts / once the camera has arrived; `short` labels the button on phones;
+ * `hidden` shots get no button. The
+ * overview is fitted to the window.
  */
 export const SHOTS = {
-  overview: { label: 'Overview', smoothTime: 0.9 },
+  overview: { label: 'Overview', short: 'Room', smoothTime: 0.9 },
   watchTV: {
     label: 'Watch TV',
+    short: 'TV',
     // sitting on the floor in front of the CRT
     position: [2.1, 0.95, -2.5],
     target: [0.5, 1.14, -2.6],
@@ -26,10 +28,9 @@ export const SHOTS = {
     // switches the set on once seated; one that's already on stays on
     tvAfter: true,
   },
-  posters: { label: 'Posters', position: [1.9, 1.55, 0.9], target: [1.9, 1.7, -4], smoothTime: 0.9 },
-  dgx: { label: 'DGX Spark', position: [1.05, 1.2, -1.6], target: [0.3, 0.97, -2.15], smoothTime: 0.9 },
-  bed: { label: 'From bed', position: [3.45, 1.15, -3.55], target: [0.5, 1.1, -2.6], smoothTime: 1.0 },
-  orbit: { label: 'Orbit', smoothTime: 0.9 },
+  posters: { label: 'Posters', short: 'Posters', position: [1.9, 1.55, 0.9], target: [1.9, 1.7, -4], smoothTime: 0.9 },
+  dgx: { label: 'DGX Spark', short: 'DGX', position: [1.05, 1.2, -1.6], target: [0.3, 0.97, -2.15], smoothTime: 0.9 },
+  bed: { label: 'From bed', short: 'Bed', position: [3.45, 1.15, -3.55], target: [0.5, 1.1, -2.6], smoothTime: 1.0 },
   // the corner with the team poster and the Nebius, NVIDIA, Black Forest Labs and Tavily posters;
   // used by Highlight posters, so it has no button of its own
   partners: { label: 'Partners', position: [3.3, 1.65, -0.55], target: [0.75, 1.65, -3.55], smoothTime: 0.9, hidden: true },
@@ -47,7 +48,6 @@ export default function CameraRig({ shot, onTvChange }) {
   const controls = useRef()
   const { camera, size } = useThree()
   const run = useRef(0) // bumps on every new shot so stale moves don't fire their TV switch
-  const arrived = useRef(false)
 
   const pose = (name) => (SHOTS[name].position ? SHOTS[name] : overviewPose(camera, size))
 
@@ -57,12 +57,10 @@ export default function CameraRig({ shot, onTvChange }) {
     const id = ++run.current
     const s = SHOTS[shot]
     const { position, target } = pose(shot)
-    arrived.current = false
     c.smoothTime = s.smoothTime
     if (s.tvBefore !== undefined) onTvChange(s.tvBefore)
     c.setLookAt(...position, ...target, true).then(() => {
       if (run.current !== id) return
-      arrived.current = true
       if (s.tvAfter !== undefined) setTimeout(() => run.current === id && onTvChange(s.tvAfter), 400)
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -70,15 +68,11 @@ export default function CameraRig({ shot, onTvChange }) {
 
   // Keep the overview framed when the window is resized.
   useEffect(() => {
-    if (shot !== 'overview' && shot !== 'orbit') return
+    if (shot !== 'overview') return
     const { position, target } = overviewPose(camera, size)
     controls.current?.setLookAt(...position, ...target, false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [size.width, size.height])
-
-  useFrame((_, dt) => {
-    if (shot === 'orbit' && arrived.current) controls.current?.rotate(dt * 0.3, 0, false)
-  })
 
   return (
     <CameraControls

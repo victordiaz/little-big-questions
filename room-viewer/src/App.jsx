@@ -204,11 +204,12 @@ export default function App() {
       onDragLeave={() => setDragging(false)}
       onDrop={onDrop}
     >
+      {/* dpr: N8AO's cost grows with the pixel count, so retina screens render at 1.5x, not 2x */}
       <Canvas
         shadows={{ type: THREE.PCFShadowMap }}
         gl={{ toneMapping: THREE.AgXToneMapping }}
         camera={{ position: [9.5, 8, 7.5], fov: 30, near: 0.05, far: 100 }}
-        dpr={[1, 2]}
+        dpr={[1, 1.5]}
       >
         <color attach="background" args={['#6a6188']} />
         <CameraRig shot={shot} onTvChange={onCameraTv} />
@@ -226,7 +227,8 @@ export default function App() {
         {/* Stand-in for Blender's raytraced AO/GI: darkens corners, under furniture and wall joins.
             The composer turns off renderer tone mapping, so AgX is applied here instead. */}
         <EffectComposer multisampling={0}>
-          <N8AO aoRadius={0.8} distanceFalloff={1} intensity={3.5} quality="high" />
+          {/* half resolution and medium quality: the AO is soft anyway, and this was the heaviest pass */}
+          <N8AO aoRadius={0.8} distanceFalloff={1} intensity={3.5} quality="medium" halfRes />
           <ToneMapping mode={ToneMappingMode.AGX} />
         </EffectComposer>
       </Canvas>
@@ -235,7 +237,8 @@ export default function App() {
       <div className="shots">
         {Object.entries(SHOTS).filter(([, s]) => !s.hidden).map(([key, s]) => (
           <button key={key} className={key === shot ? 'active' : ''} onClick={() => pickShot(key)}>
-            {s.label}
+            <span className="shot-label">{s.label}</span>
+            <span className="shot-short">{s.short}</span>
           </button>
         ))}
       </div>

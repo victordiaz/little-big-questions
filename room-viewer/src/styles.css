@@ -48,6 +48,39 @@ body,
   opacity: 1;
 }
 
+.shot-short {
+  display: none;
+}
+
+/* Phones: short labels on one row, clear of the info button on the right */
+@media (max-width: 600px) {
+  .shots {
+    top: 16px;
+    left: 12px;
+    right: 60px;
+    transform: none;
+    max-width: none;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    gap: 2px;
+  }
+
+  .shots button {
+    flex: 1 1 auto;
+    padding: 7px 8px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .shot-label {
+    display: none;
+  }
+
+  .shot-short {
+    display: inline;
+  }
+}
+
 .info-button {
   position: fixed;
   top: 16px;

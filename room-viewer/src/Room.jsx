@@ -33,7 +33,15 @@ const LED_OFF = new THREE.Color(0.25, 0.02, 0.02)
 // `lit`: the names of the partner posters lit up right now.
 export default function Room({ videoSrc, feedEl, muted, tvOn, onToggleTV, lit = [] }) {
   const { scene } = useGLTF(MODEL_URL)
+  const gl = useThree((s) => s.gl)
   const [hoverTV, setHoverTV] = useState(false)
+
+  // Nothing in the room moves except the posters popping, so the sun's shadow map is drawn once
+  // here and again only while a poster animates (below), not every frame.
+  useEffect(() => {
+    gl.shadowMap.autoUpdate = false
+    gl.shadowMap.needsUpdate = true
+  }, [gl, scene])
 
   useEffect(() => {
     scene.traverse((obj) => {
@@ -96,6 +104,7 @@ export default function Room({ videoSrc, feedEl, muted, tvOn, onToggleTV, lit = 
       for (const m of p.image) m.emissiveIntensity = POSTER_GLOW * p.k
       for (const m of p.frame) m.emissiveIntensity = p.k
       for (const { obj, scale, pop } of p.parts) obj.scale.copy(scale).multiplyScalar(1 + pop * p.k)
+      gl.shadowMap.needsUpdate = true
     }
   })
 

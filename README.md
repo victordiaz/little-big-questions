@@ -242,7 +242,7 @@ Where the samples landed: ground, walls and floor are within a few RGB values of
 
 ### Camera shots
 
-`CameraRig.jsx` uses drei's `CameraControls`. Its `setLookAt(…, true)` animates the move and returns a promise when the camera arrives, which is what lets the TV switch on at the right moment. Shots: **Overview** (fitted to the window), **Watch TV**, **Posters**, **DGX Spark**, **From bed** and **Orbit**.
+`CameraRig.jsx` uses drei's `CameraControls`. Its `setLookAt(…, true)` animates the move and returns a promise when the camera arrives, which is what lets the TV switch on at the right moment. Shots: **Overview** (fitted to the window), **Watch TV**, **Posters**, **DGX Spark** and **From bed**.
 
 ![Camera shots](docs/images/app-shots.jpg)
 
@@ -468,7 +468,7 @@ The fake lettering came from two training frames with text in them (a festival p
 
 **What got in the way.** The GPU quota was 0, so a teammate created the VM by hand and the agent reached it through an SSH alias. AI Toolkit needed `torchaudio`, exact pinned versions of diffusers and transformers, and a patch to Klein's prompt encoding, which crashed on the first sample. The distilled Klein never downloaded (a Hugging Face Xet storage error), so the images are made with Klein Base plus the LoRA. Captioning moved from OpenRouter to Nebius Token Factory after a 404.
 
-**Into the show.** The four images of "Why are Ukraine and Russia fighting?" were redrawn with the LoRA and dropped into `news/2026-10-18/why-are-ukraine-and-russia-fighting/`, replacing the Klein ones; `news_video.py` animated them again (the old clips are kept in a `backup-…` folder next to them). For the demo, the four narrated clips were also cut down to a 45-second version: the narration sped up 1.2× without changing its pitch and each clip sped up to match, with the captions in `news.json` retimed to fit. A demo copy turns the narration down to 10% after the first step, so a presenter can talk over it.
+**Into the show.** The four images of "Why are Ukraine and Russia fighting?" were redrawn with the LoRA and dropped into `news/2026-10-18/why-are-ukraine-and-russia-fighting/`, replacing the Klein ones; `news_video.py` animated them again (the old clips are kept in a `backup-…` folder next to them). For the demo, the four narrated clips were also cut down to a 45-second version: the narration sped up 1.2× without changing its pitch and each clip sped up to match, with the captions in `news.json` retimed to fit.
 
 The submission for the BFL challenge, with the finished film, is in the [next section](#bfl-challenge-train-a-style-tell-a-story).
 
