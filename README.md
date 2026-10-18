@@ -8,6 +8,12 @@ This repository is where the show is being built. It lives in a cozy 90s kid's b
 
 This README walks through how we got here, step by step.
 
+## ▶ The film
+
+**[Watch the film: "Why are Ukraine and Russia fighting?"](bfl-challenge/film.mp4)** (61 seconds), our entry for the Black Forest Labs challenge *Train a Style, Tell a Story*. The story is told in a hand-drawn 1960s Zagreb Film cartoon style, from a LoRA we trained on FLUX 3 Klein. The details are in [BFL Challenge](#bfl-challenge-train-a-style-tell-a-story).
+
+[![A still from the film, in the Balthazar style. Click to watch.](docs/images/film-poster.jpg)](bfl-challenge/film.mp4)
+
 ## Contents
 
 1. [The pipeline at a glance](#the-pipeline-at-a-glance)
@@ -24,10 +30,11 @@ This README walks through how we got here, step by step.
 12. [Step 11: Olive, the presenter](#step-11-olive-the-presenter)
 13. [Step 12: the show on the bedroom TV](#step-12-the-show-on-the-bedroom-tv)
 14. [Step 13: today's news, made for kids](#step-13-todays-news-made-for-kids)
-15. [Project layout](#project-layout)
-16. [Running and regenerating](#running-and-regenerating)
-17. [BFL Challenge: Train a Style, Tell a Story](#bfl-challenge-train-a-style-tell-a-story)
-18. [Credits](#credits)
+15. [Step 14: a cartoon style of our own, a Klein LoRA](#step-14-a-cartoon-style-of-our-own-a-klein-lora)
+16. [BFL Challenge: Train a Style, Tell a Story](#bfl-challenge-train-a-style-tell-a-story)
+17. [Project layout](#project-layout)
+18. [Running and regenerating](#running-and-regenerating)
+19. [Credits](#credits)
 
 ## The pipeline at a glance
 
@@ -411,6 +418,78 @@ flowchart LR
 
 ![A news story on the TV, with captions](docs/images/news-story.jpg)
 
+## Step 14: a cartoon style of our own, a Klein LoRA
+
+Out of the box, FLUX 3 Klein draws a generic cartoon. To give the stories a look of their own, a teammate taught it the flat, hand-drawn style of *Professor Balthazar*, the 1960s Zagreb Film cartoon, with a LoRA: a small adapter trained on top of the open-weights model. An AI agent did the whole job over SSH on a rented Nebius GPU, in about four hours and a few dollars of GPU time. The LoRA is on Hugging Face: [jurecerkez/baltazar-style-lora](https://huggingface.co/jurecerkez/baltazar-style-lora).
+
+```mermaid
+flowchart LR
+    eps["3 Balthazar episodes<br/>yt-dlp"] --> frames["frames, 1 every 25 s<br/>deduped, cropped, no text"]
+    frames --> captions["captions + trigger word<br/>MiniCPM-V on Nebius Token Factory"]
+    captions --> train["AI Toolkit on Klein Base<br/>Nebius RTX PRO 6000"]
+    train --> lora["baltazar-style-lora<br/>Hugging Face"]
+    lora --> images["story images<br/>in the Balthazar style"]
+    images --> video["news_video.py<br/>FLUX 3 Video"]
+```
+
+**The dataset.** Three episodes downloaded with yt-dlp, one frame every 25 seconds, deduplicated and cropped to 25 frames. A vision model on Nebius Token Factory (`openbmb/MiniCPM-V-4_5`) described what's in each frame, and each caption ends with the made-up trigger `bltzr style`, so the LoRA ties the look to that word rather than to the content.
+
+**Training.** [AI Toolkit](https://github.com/ostris/ai-toolkit) by Ostris on `flux-3-image-klein-base` (the non-distilled model, a 29 GB download), on one NVIDIA RTX PRO 6000 Blackwell with 96 GB: rank 32, alpha 32, learning rate 1e-4, batch 1, 1024 px.
+
+| Run | Images | Steps | Time | Final loss | Result |
+|---|---|---|---|---|---|
+| 1 | 25 | 1,000 | 18.5 min | ~0.73 | a generic flat cartoon, with fake lettering |
+| 2 | 23 | 2,000 | 34.3 min | ~0.35 | the Balthazar look, no text: the one we use |
+
+The fake lettering came from two training frames with text in them (a festival poster and a chair with a "B"). Dropping them and doubling the steps fixed both problems.
+
+**What got in the way.** The GPU quota was 0, so a teammate created the VM by hand and the agent reached it through an SSH alias. AI Toolkit needed `torchaudio`, exact pinned versions of diffusers and transformers, and a patch to Klein's prompt encoding, which crashed on the first sample. The distilled Klein never downloaded (a Hugging Face Xet storage error), so the images are made with Klein Base plus the LoRA. Captioning moved from OpenRouter to Nebius Token Factory after a 404.
+
+**Into the show.** The four images of "Why are Ukraine and Russia fighting?" were redrawn with the LoRA and dropped into `news/2026-10-18/why-are-ukraine-and-russia-fighting/`, replacing the Klein ones; `news_video.py` animated them again (the old clips are kept in a `backup-…` folder next to them). For the demo, the four narrated clips were also cut down to a 45-second version: the narration sped up 1.2× without changing its pitch and each clip sped up to match, with the captions in `news.json` retimed to fit. A demo copy turns the narration down to 10% after the first step, so a presenter can talk over it.
+
+The submission for the BFL challenge, with the finished film, is in the [next section](#bfl-challenge-train-a-style-tell-a-story).
+
+The training frames come from copyrighted Zagreb Film episodes, so the LoRA is a hackathon experiment, not something to publish more widely until that's sorted out.
+
+## BFL Challenge: Train a Style, Tell a Story
+
+This project is an entry in the Black Forest Labs hackathon track **Media Generation: Train a Style, Tell a Story**. We trained a LoRA on FLUX 3 Image Klein to produce the flat hand-drawn cartoon look of 1960s Zagreb Film's Professor Balthazar, then used it to generate a film that answers a real kid's question.
+
+### The style
+
+Flat 1960s Zagreb Film hand-drawn cartoon, the Professor Balthazar look — thick black outlines, flat muted colours, simple round faces. The base Klein model cannot produce this look without the LoRA.
+
+### Where the data came from
+
+23 frames extracted and cleaned from three Zagreb Film cartoon episodes on YouTube. Deduplicated, cropped, and frames containing text were dropped (text in training images teaches the model fake lettering). Each frame was captioned by a vision model (MiniCPM-V-4\_5 on Nebius Token Factory) with content-only descriptions ending in the trigger word `bltzr style`.
+
+### Which checkpoint
+
+Final 2,000-step checkpoint (`baltazar-style-lora.safetensors`), rank-32 LoRA, learning rate 1e-4, AdamW, batch size 1, resolution 1024. Trained on FLUX 3 Image Klein Base (`black-forest-labs/flux-3-image-klein-base`) with AI Toolkit (Ostris), arch `flux3`, on an NVIDIA RTX PRO 6000 GPU rented from Nebius Cloud. Total training time: 34 minutes.
+
+**LoRA on Hugging Face:** [jurecerkez/baltazar-style-lora](https://huggingface.co/jurecerkez/baltazar-style-lora)
+
+### The film
+
+[`bfl-challenge/film.mp4`](bfl-challenge/film.mp4) (61 seconds, 1280×704) — "Why are Ukraine and Russia fighting?", a four-step story in the Balthazar style that explains the background honestly, shows different points of view, points to people helping, and ends with a question back to the viewer. The style holds across all four scenes.
+
+### Training images
+
+6 of the 23 training images:
+
+![img01](bfl-challenge/training_images/img01.jpg)
+![img06](bfl-challenge/training_images/img06.jpg)
+![img11](bfl-challenge/training_images/img11.jpg)
+![img16](bfl-challenge/training_images/img16.jpg)
+![img21](bfl-challenge/training_images/img21.jpg)
+![img25](bfl-challenge/training_images/img25.jpg)
+
+### Base vs. LoRA
+
+Same prompt and seed. Klein Base on the left, with the LoRA on the right:
+
+![Base vs LoRA](bfl-challenge/base_vs_lora.jpg)
+
 ## Project layout
 
 ```
@@ -535,50 +614,12 @@ bpy.ops.export_scene.gltf(
 )
 ```
 
-## BFL Challenge: Train a Style, Tell a Story
-
-This project is an entry in the Black Forest Labs hackathon track **Media Generation: Train a Style, Tell a Story**. We trained a LoRA on FLUX 3 Image Klein to produce the flat hand-drawn cartoon look of 1960s Zagreb Film's Professor Balthazar, then used it to generate a film that answers a real kid's question.
-
-### The style
-
-Flat 1960s Zagreb Film hand-drawn cartoon, the Professor Balthazar look — thick black outlines, flat muted colours, simple round faces. The base Klein model cannot produce this look without the LoRA.
-
-### Where the data came from
-
-23 frames extracted and cleaned from three Zagreb Film cartoon episodes on YouTube. Deduplicated, cropped, and frames containing text were dropped (text in training images teaches the model fake lettering). Each frame was captioned by a vision model (MiniCPM-V-4\_5 on Nebius Token Factory) with content-only descriptions ending in the trigger word `bltzr style`.
-
-### Which checkpoint
-
-Final 2,000-step checkpoint (`baltazar-style-lora.safetensors`), rank-32 LoRA, learning rate 1e-4, AdamW, batch size 1, resolution 1024. Trained on FLUX 3 Image Klein Base (`black-forest-labs/flux-3-image-klein-base`) with AI Toolkit (Ostris), arch `flux3`, on an NVIDIA RTX PRO 6000 GPU rented from Nebius Cloud. Total training time: 34 minutes.
-
-**LoRA on Hugging Face:** [jurecerkez/baltazar-style-lora](https://huggingface.co/jurecerkez/baltazar-style-lora)
-
-### The film
-
-[`bfl-challenge/film.mp4`](bfl-challenge/film.mp4) (61 seconds, 1280×704) — "Why are Ukraine and Russia fighting?", a four-step story in the Balthazar style that explains the background honestly, shows different points of view, points to people helping, and ends with a question back to the viewer. The style holds across all four scenes.
-
-### Training images
-
-6 of the 23 training images:
-
-![img01](bfl-challenge/training_images/img01.jpg)
-![img06](bfl-challenge/training_images/img06.jpg)
-![img11](bfl-challenge/training_images/img11.jpg)
-![img16](bfl-challenge/training_images/img16.jpg)
-![img21](bfl-challenge/training_images/img21.jpg)
-![img25](bfl-challenge/training_images/img25.jpg)
-
-### Base vs. LoRA
-
-Same prompt and seed. Klein Base on the left, with the LoRA on the right:
-
-![Base vs LoRA](bfl-challenge/base_vs_lora.jpg)
-
 ## Credits
 
 - **DGX Spark** product photos from the [PNY press image kit](https://www.pny.com/company/press-center/press-images/nvidia-dgx-spark).
 - **Logos** from [Dashboard Icons](https://dashboardicons.com/) and [LobeHub Icons](https://lobehub.com/icons). NVIDIA, DGX Spark, Nemotron, Nebius, Black Forest Labs and Tavily are trademarks of their respective owners and are used here for a personal, non-commercial scene.
 - **Posters, textures and labs concepts** generated with [FLUX 3 Image](https://docs.bfl.ai/) by Black Forest Labs; story images with FLUX 3 Klein and story videos with FLUX 3 Video.
+- **The Balthazar style LoRA** trained by a teammate with [AI Toolkit](https://github.com/ostris/ai-toolkit) on a [Nebius AI Cloud](https://nebius.com/) GPU, from frames of *Professor Balthazar* by Zagreb Film.
 - **News** found with [Tavily](https://www.tavily.com/) and written for kids by NVIDIA Nemotron 3.5 Super VL on [Nebius Token Factory](https://nebius.com/).
 - **The narrator's voice** in the story videos made with Chatterbox, cloned from the sample of the [Fish Audio voice "Dash (PBS KIDS)"](https://fish.audio/m/0ace0d3ff3cd403e88e751d4d9485020/).
 - **Jingle**: "Positive Orchestral Jingle" by sergequadrado, [Freesound #455606](https://freesound.org/s/455606/).
