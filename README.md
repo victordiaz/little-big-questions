@@ -4,15 +4,22 @@ Little Big Questions helps kids make sense of the big, sometimes scary things ha
 
 This repository is where the show is being built. It lives in a cozy 90s kid's bedroom, rebuilt in Blender from a single AI-generated reference image, textured with images from FLUX, and shipped as an interactive React + three.js app. On the bedroom's CRT, Olive the owl presents the news: a logo intro, a news show where each story answers one question, and an outro. The logo, the presenter and the show were each worked out first as small experiments under `/labs`. The stories come from today's real news: an agent finds them with Tavily, Nemotron rewrites them for kids, FLUX draws and animates them, and Chatterbox narrates them.
 
-![The app: overview](docs/images/app-overview.jpg)
+<table>
+  <tr>
+    <th width="50%">The bedroom, in 3D</th>
+    <th width="50%">▶ The film</th>
+  </tr>
+  <tr>
+    <td><img src="docs/images/app-overview.jpg" alt="The app: overview of the 3D bedroom"></td>
+    <td><a href="bfl-challenge/film.mp4"><img src="docs/images/film-poster.jpg" alt="A still from the film, in the Balthazar style. Click to watch."></a></td>
+  </tr>
+  <tr>
+    <td>The React + three.js app: the bedroom rebuilt in Blender, with Olive's show on the CRT.</td>
+    <td><a href="bfl-challenge/film.mp4"><b>Watch "Why are Ukraine and Russia fighting?"</b></a> (61 seconds), our entry for the Black Forest Labs challenge <i>Train a Style, Tell a Story</i>, drawn in a 1960s Zagreb Film cartoon style from a LoRA we trained on FLUX 3 Klein. Details in <a href="#bfl-challenge-train-a-style-tell-a-story">BFL Challenge</a>.</td>
+  </tr>
+</table>
 
 This README walks through how we got here, step by step.
-
-## ▶ The film
-
-**[Watch the film: "Why are Ukraine and Russia fighting?"](bfl-challenge/film.mp4)** (61 seconds), our entry for the Black Forest Labs challenge *Train a Style, Tell a Story*. The story is told in a hand-drawn 1960s Zagreb Film cartoon style, from a LoRA we trained on FLUX 3 Klein. The details are in [BFL Challenge](#bfl-challenge-train-a-style-tell-a-story).
-
-[![A still from the film, in the Balthazar style. Click to watch.](docs/images/film-poster.jpg)](bfl-challenge/film.mp4)
 
 ## Contents
 
