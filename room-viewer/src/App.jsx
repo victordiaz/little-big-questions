@@ -239,9 +239,6 @@ export default function App() {
           </button>
         ))}
       </div>
-      <div className="hud">
-        <span>Click the TV to switch it, or drop a video file to play it</span>
-      </div>
       {feed &&
         createPortal(
           <>
