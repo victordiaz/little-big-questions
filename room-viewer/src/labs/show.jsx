@@ -109,6 +109,28 @@ export function Newsroom({ story, segment, auto, onDone, voice = false }) {
     })
   }, [segment, story.id])
 
+  // The picture is painted onto a canvas rather than shown by the <video> itself: on the TV this
+  // page sits in a CSS 3D transform, and iOS Safari drops the native video layer at some angles.
+  // The (invisible) video still plays the sound and drives the captions.
+  const canvasRef = useRef(null)
+  useEffect(() => {
+    const v = videoRef.current
+    const canvas = canvasRef.current
+    if (!v || !canvas || segment !== 'video') return
+    const ctx = canvas.getContext('2d')
+    let frame
+    const draw = () => {
+      if (v.videoWidth && v.readyState >= 2) {
+        if (canvas.width !== v.videoWidth) canvas.width = v.videoWidth
+        if (canvas.height !== v.videoHeight) canvas.height = v.videoHeight
+        ctx.drawImage(v, 0, 0)
+      }
+      frame = requestAnimationFrame(draw)
+    }
+    draw()
+    return () => cancelAnimationFrame(frame)
+  }, [segment, story.id])
+
   // The caption for the narration playing now: the last chapter that has started.
   const chapter = segment === 'video' ? (story.chapters ?? []).findLast((c) => c.start <= videoTime) : null
 
@@ -141,6 +163,7 @@ export function Newsroom({ story, segment, auto, onDone, voice = false }) {
           onTimeUpdate={(e) => setVideoTime(e.currentTarget.currentTime)}
           onEnded={() => auto && segment === 'video' && onDoneRef.current()}
         />
+        <canvas ref={canvasRef} aria-hidden="true" />
       </div>
 
       {/* Olive and the desk move as one, so her hands always rest on the desk edge. */}

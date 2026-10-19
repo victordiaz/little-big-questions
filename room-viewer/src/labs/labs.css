@@ -1484,7 +1484,8 @@
   width: 14cqw;
 }
 
-.set-screen video {
+.set-screen video,
+.set-screen canvas {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -1493,6 +1494,7 @@
   opacity: 0;
   transition: opacity 0.5s 0.3s;
 }
+
 
 /* Olive + desk. The anchor box is exactly Olive's body crop (300x240); the desk front starts
    at its bottom edge, the desk top sits just behind her hands. */
@@ -1760,7 +1762,9 @@
   border-width: 0;
 }
 
-.stage.seg-video .set-screen video {
+/* the canvas copy sits over the video: it still shows where iOS drops the video's own layer */
+.stage.seg-video .set-screen video,
+.stage.seg-video .set-screen canvas {
   opacity: 1;
 }
 
