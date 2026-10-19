@@ -23,18 +23,6 @@ Nobody writes or draws these stories by hand. An agent reads the week's news, pi
   </tr>
 </table>
 
-**What we used**
-
-- **The newsroom agent**
-  - **Tavily** to search the news
-  - **NVIDIA Nemotron 3.5 Super VL** on Nebius Token Factory as the editor, the writer and Olive's scriptwriter
-  - **FLUX 3 Klein** by Black Forest Labs to draw each step, with **a Balthazar style LoRA** we trained with AI Toolkit on a Nebius GPU
-  - **FLUX 3 Video** to animate the pictures
-  - **Chatterbox** by Resemble AI, run locally, for the narration and Olive's voice
-  - **ffmpeg** to edit the episode
-- **The show:** Olive the owl and the studio, built in React and SVG, playing live on the bedroom's TV
-- **The bedroom:** modelled in **Blender, driven by Claude Code over MCP**, textured with **FLUX 3 Image**, and shown with **React, three.js, React Three Fiber and drei**
-
 ## Contents
 
 1. [How the newsroom agent works](#how-the-newsroom-agent-works)
@@ -42,10 +30,11 @@ Nobody writes or draws these stories by hand. An agent reads the week's news, pi
 3. [A cartoon style of our own](#a-cartoon-style-of-our-own)
 4. [The show](#the-show)
 5. [The bedroom](#the-bedroom)
-6. [Project layout](#project-layout)
-7. [Running it](#running-it)
-8. [Team](#team)
-9. [Credits](#credits)
+6. [What we used](#what-we-used)
+7. [Project layout](#project-layout)
+8. [Running it](#running-it)
+9. [Team](#team)
+10. [Credits](#credits)
 
 ## How the newsroom agent works
 
@@ -240,6 +229,21 @@ flowchart LR
 ![Camera shots](docs/images/app-shots.jpg)
 
 The full build log is in [docs/building-the-room.md](docs/building-the-room.md). It covers the glTF export, matching the lighting, the camera shots, the CRT effect and the labs in detail.
+
+## What we used
+
+| Part | Tool | What it does |
+|---|---|---|
+| Newsroom | [Tavily](https://www.tavily.com/) | searches the news |
+| | NVIDIA Nemotron 3.5 Super VL on [Nebius Token Factory](https://nebius.com/) | the editor, the writer and Olive's scriptwriter |
+| | FLUX 3 Klein by Black Forest Labs, with our [Balthazar style LoRA](#a-cartoon-style-of-our-own) | draws each step |
+| | FLUX 3 Video | animates the pictures |
+| | [Chatterbox](https://github.com/resemble-ai/chatterbox) by Resemble AI, run locally | the narration and Olive's voice |
+| | ffmpeg | edits the episode |
+| Show | React and SVG | Olive and the studio, playing live on the bedroom's TV |
+| Bedroom | Blender, driven by Claude Code over MCP | builds the room |
+| | FLUX 3 Image | the posters and textures |
+| | React, three.js, React Three Fiber and drei | the room in the browser |
 
 ## Project layout
 
