@@ -128,35 +128,75 @@ button {
   /* above the scene and the TV page, under the README overlay (.info-overlay, 10) */
   z-index: 5;
   box-sizing: border-box;
-  width: min(560px, calc(100% - 32px));
+  width: min(520px, calc(100% - 32px));
   max-height: calc(100% - 32px);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
-  padding: 32px 28px 28px;
+  gap: 18px;
+  padding: 36px 36px 32px;
   border-radius: 24px;
   background: rgba(20, 16, 36, 0.78);
   backdrop-filter: blur(8px);
   text-align: center;
 }
 
+.welcome-lead {
+  max-width: 400px;
+  margin: 6px 0 0;
+  font: 500 21px/1.3 var(--display);
+  color: var(--cream);
+  text-wrap: balance;
+}
+
 .welcome p {
   margin: 0;
+  max-width: 400px;
   font-family: 'Nunito', system-ui, sans-serif;
-  font-size: 16px;
-  line-height: 1.6;
-  color: var(--cream);
+  font-size: 15px;
+  line-height: 1.55;
+  color: rgba(255, 246, 230, 0.7);
+  text-wrap: balance;
+}
+
+/* the goal: three captions under their icons, plain text so they don't read as buttons */
+.welcome-points {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+  margin: 4px 0;
+  padding: 20px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  list-style: none;
+}
+
+.welcome-points li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font: 600 14px/1.3 'Nunito', system-ui, sans-serif;
+  color: rgba(255, 246, 230, 0.85);
+  white-space: pre-line;
+}
+
+.welcome-icon {
+  font-size: 30px;
+  line-height: 1;
 }
 
 .welcome-play {
+  min-width: 200px;
+  margin-top: 4px;
   border: 0;
   border-radius: 999px;
-  padding: 12px 32px;
+  padding: 14px 40px;
   background: var(--coral);
+  box-shadow: 0 6px 20px rgba(255, 107, 90, 0.35);
   color: #fff;
-  font: 600 20px var(--display);
+  font: 600 22px var(--display);
   cursor: pointer;
   transition: transform 0.15s;
 }
@@ -167,32 +207,39 @@ button {
 
 /* the logo scales from --lk (the cap height of "BIG"), so phones get a smaller one */
 .welcome .lockup-x {
-  --lk: 44px !important;
+  --lk: 40px !important;
 }
 
 .welcome .logo-mark {
-  width: calc(var(--lk) * 1.9);
+  width: calc(var(--lk) * 1.55);
   height: auto;
 }
 
 @media (max-width: 600px) {
   .welcome {
-    padding: 24px 20px 20px;
+    padding: 28px 20px 20px;
     gap: 16px;
   }
 
   .welcome .lockup-x {
-    --lk: 32px !important;
+    --lk: 34px !important;
   }
 
-  .welcome p {
-    font-size: 15px;
-    line-height: 1.55;
+  .welcome-lead {
+    font-size: 19px;
+  }
+
+  .welcome-points li {
+    font-size: 13px;
+  }
+
+  .welcome-icon {
+    font-size: 26px;
   }
 
   .welcome-play {
     width: 100%;
-    padding: 14px 32px;
+    font-size: 20px;
   }
 }
 
@@ -207,8 +254,16 @@ button {
     display: none;
   }
 
+  .welcome-lead {
+    font-size: 18px;
+  }
+
   .welcome p {
     font-size: 14px;
+  }
+
+  .welcome-points {
+    padding-top: 10px;
   }
 
   .welcome-play {

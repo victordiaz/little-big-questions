@@ -30,11 +30,17 @@ const START_CHANNEL = new URLSearchParams(window.location.search).get('channel')
 // The TV panel (channels, the show's rundown, posters) only shows with ?debug.
 const DEBUG = new URLSearchParams(window.location.search).has('debug')
 
-const ABOUT =
-  'Little Big Questions helps kids make sense of the big, sometimes scary things happening in the world. ' +
-  'We take real news, like elections, wars, climate, or inequality, and explain it in friendly, cartoon-style ' +
-  'stories that are honest without being frightening. The goal isn’t to shield kids from the world, but to ' +
-  'help them understand that it’s complicated, that people see things differently, and that their questions matter.'
+// The welcome card: what the show is for, then the three things it wants kids to take away.
+const ABOUT = {
+  lead: 'Helping kids make sense of the big, sometimes scary things happening in the world.',
+  body: 'We take real news, like elections, wars or climate, and turn it into friendly cartoon stories: honest, never frightening.',
+  // two lines each, so the three columns line up
+  points: [
+    ['🌍', 'The world is\ncomplicated'],
+    ['🤝', 'People see it\ndifferently'],
+    ['❓', 'Your questions\nmatter'],
+  ],
+}
 
 export default function App() {
   const [videoSrc, setVideoSrc] = useState(() => new URLSearchParams(window.location.search).get('video'))
@@ -258,8 +264,19 @@ export default function App() {
 
       {stage === 'welcome' && (
         <div className="welcome">
-          <Lockup layout="stacked" tone="reverse" size={44} />
-          <p>{ABOUT}</p>
+          <Lockup layout="horizontal" tone="reverse" size={40} />
+          <h1 className="welcome-lead">{ABOUT.lead}</h1>
+          <p>{ABOUT.body}</p>
+          <ul className="welcome-points">
+            {ABOUT.points.map(([icon, text]) => (
+              <li key={text}>
+                <span className="welcome-icon" aria-hidden="true">
+                  {icon}
+                </span>
+                {text}
+              </li>
+            ))}
+          </ul>
           <button className="welcome-play" onClick={play}>
             ▶ Play
           </button>
