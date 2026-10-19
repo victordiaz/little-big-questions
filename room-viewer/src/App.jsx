@@ -12,16 +12,16 @@ import TVControls, { CHANNELS } from './TVControls.jsx'
 import { INTRO_SECONDS, OUTRO_SECONDS, Intro, Outro } from './labs/intro.jsx'
 import { Newsroom, useShow } from './labs/show.jsx'
 import { playSting } from './labs/sting.js'
+import { Lockup } from './labs/brand.jsx'
 import './labs/labs.css'
 
 // Highlight posters: time for the camera to reach the posters (when it isn't there yet), then
 // the team poster lights up on its own for TEAM_HOLD, then the partners light up staggered: each
-// starts STAGGER after the last and stays lit for HOLD. Watch TV moves on to the TV after a beat.
+// starts STAGGER after the last and stays lit for HOLD.
 const POSTER_LEAD_MS = 1000
 const TEAM_HOLD_MS = 3000
 const POSTER_STAGGER_MS = 250
 const POSTER_HOLD_MS = 700
-const POSTER_AFTER_MS = 300
 
 // The Video channel plays ?video=<url>, or a video file dropped on the page.
 // Start on a channel with ?channel=video|logo|show (default: the logo, until Watch TV starts
@@ -29,6 +29,12 @@ const POSTER_AFTER_MS = 300
 const START_CHANNEL = new URLSearchParams(window.location.search).get('channel')
 // The TV panel (channels, the show's rundown, posters) only shows with ?debug.
 const DEBUG = new URLSearchParams(window.location.search).has('debug')
+
+const ABOUT =
+  'Little Big Questions helps kids make sense of the big, sometimes scary things happening in the world. ' +
+  'We take real news, like elections, wars, climate, or inequality, and explain it in friendly, cartoon-style ' +
+  'stories that are honest without being frightening. The goal isn’t to shield kids from the world, but to ' +
+  'help them understand that it’s complicated, that people see things differently, and that their questions matter.'
 
 export default function App() {
   const [videoSrc, setVideoSrc] = useState(() => new URLSearchParams(window.location.search).get('video'))
@@ -38,6 +44,9 @@ export default function App() {
   const [dragging, setDragging] = useState(false)
   const [shot, setShot] = useState('overview')
   const [infoOpen, setInfoOpen] = useState(false)
+  // 'welcome' shows what the show is about and a Play button, 'playing' runs the programme once,
+  // 'explore' shows the camera shots. Debug and ?channel= links go straight to exploring.
+  const [stage, setStage] = useState(DEBUG || START_CHANNEL ? 'explore' : 'welcome')
   const [channel, setChannel] = useState(START_CHANNEL in CHANNELS ? START_CHANNEL : 'logo')
   const [logoTheme, setLogoTheme] = useState('studio')
   const [logoTake, setLogoTake] = useState(0)
@@ -62,9 +71,9 @@ export default function App() {
       playSting()
     }
   }
-  // Highlight posters: go to the posters, light up the team, then Nebius, NVIDIA, Black Forest
-  // Labs and Tavily in a staggered wave, then `then()` (Watch TV goes on to the TV). Pressing it
-  // again starts over; picking another shot or channel stops it.
+  // Highlight posters (TV panel): go to the posters, light up the team, then Nebius, NVIDIA,
+  // Black Forest Labs and Tavily in a staggered wave. Pressing it again starts over; picking
+  // another shot or channel stops it.
   const [lit, setLit] = useState([])
   const highlightTimers = useRef([])
   const stopPosters = () => {
@@ -72,7 +81,7 @@ export default function App() {
     highlightTimers.current = []
     setLit([])
   }
-  const highlightPosters = (then) => {
+  const highlightPosters = () => {
     stopPosters()
     const lead = shot === 'partners' ? 0 : POSTER_LEAD_MS
     setOpening(null)
@@ -83,39 +92,51 @@ export default function App() {
       setTimeout(() => setLit((l) => l.filter((n) => n !== name)), off),
     ]
     const wave = lead + TEAM_HOLD_MS
-    const end = wave + (partners.length - 1) * POSTER_STAGGER_MS + POSTER_HOLD_MS
     highlightTimers.current = [
       ...light(team, lead, wave),
       ...partners.flatMap((name, i) => light(name, wave + i * POSTER_STAGGER_MS, wave + i * POSTER_STAGGER_MS + POSTER_HOLD_MS)),
-      ...(then ? [setTimeout(then, end + POSTER_AFTER_MS)] : []),
     ]
   }
   useEffect(() => () => highlightTimers.current.forEach(clearTimeout), [])
 
-  // Watch TV opens the programme: the team and partner posters, then the camera sits down in front
-  // of the TV, the logo intro plays once the set is on, then the news show.
+  // Play (and Play again) opens the programme: the camera sits down in front of the TV, the logo
+  // intro plays once the set is on, then the news show. The Watch TV shot only moves the camera.
   // null, or where it's up to: 'seating' waits for the camera to arrive and switch the set on
   // (see SHOTS.watchTV), 'intro' plays the logo.
   const [opening, setOpening] = useState(null)
-  const watchTV = () => {
+  // read when the camera arrives, which is after the render that started the move
+  const openingRef = useRef(opening)
+  openingRef.current = opening
+  const startProgramme = () => {
     // watching means listening: the jingle and Olive's voice need sound
     setMuted(false)
     setClosing(false)
-    highlightPosters(() => {
+    stopPosters()
+    if (shot === 'watchTV') {
+      // already seated, so the camera won't move and switch the set on: start right away
+      setTvOn(true)
+      setOpening('intro')
+    } else {
       setShot('watchTV')
       setOpening('seating')
-    })
+    }
+  }
+  const play = () => {
+    setStage('playing')
+    startProgramme()
   }
   const pickShot = (key) => {
-    if (key === 'watchTV') return watchTV()
     stopPosters()
-    setOpening(null)
+    // going to the TV doesn't interrupt an opening that is already heading there
+    if (key !== 'watchTV') setOpening(null)
     setShot(key)
   }
-  // The camera switches the set on when it arrives; that's the opening's cue for the intro.
+  // When the programme is opening, the camera switches the set on as it arrives; that's the cue
+  // for the intro. Otherwise the Watch TV shot leaves the set as it is.
   const onCameraTv = (on) => {
-    setTvOn(on)
-    if (on) setOpening((o) => (o === 'seating' ? 'intro' : o))
+    if (!on || openingRef.current !== 'seating') return
+    setTvOn(true)
+    setOpening('intro')
   }
 
   useEffect(() => {
@@ -140,6 +161,7 @@ export default function App() {
     const timer = setTimeout(() => {
       setClosing(false)
       setTvOn(false)
+      setStage('explore')
     }, OUTRO_SECONDS * 1000)
     return () => clearTimeout(timer)
   }, [closing, channel, tvOn])
@@ -234,14 +256,34 @@ export default function App() {
       </Canvas>
       <Loader />
 
-      <div className="shots">
-        {Object.entries(SHOTS).filter(([, s]) => !s.hidden).map(([key, s]) => (
-          <button key={key} className={key === shot ? 'active' : ''} onClick={() => pickShot(key)}>
-            <span className="shot-label">{s.label}</span>
-            <span className="shot-short">{s.short}</span>
+      {stage === 'welcome' && (
+        <div className="welcome">
+          <Lockup layout="stacked" tone="reverse" size={44} />
+          <p>{ABOUT}</p>
+          <button className="welcome-play" onClick={play}>
+            ▶ Play
           </button>
-        ))}
-      </div>
+        </div>
+      )}
+      {stage === 'playing' && (
+        <button className="skip-button" onClick={() => setStage('explore')}>
+          Explore the room
+        </button>
+      )}
+      {stage === 'explore' && (
+        <div className="shots">
+          {Object.entries(SHOTS).filter(([, s]) => !s.hidden).map(([key, s]) => (
+            <button key={key} className={key === shot ? 'active' : ''} onClick={() => pickShot(key)}>
+              <span className="shot-label">{s.label}</span>
+              <span className="shot-short">{s.short}</span>
+            </button>
+          ))}
+          <button className="replay" onClick={play}>
+            <span className="shot-label">↻ Play again</span>
+            <span className="shot-short">↻</span>
+          </button>
+        </div>
+      )}
       {feed &&
         createPortal(
           <>
@@ -263,8 +305,8 @@ export default function App() {
           onToggleTV={() => setTvOn((on) => !on)}
           muted={muted}
           onToggleSound={toggleSound}
-          onWatch={watchTV}
-          onHighlightPosters={() => highlightPosters()}
+          onWatch={startProgramme}
+          onHighlightPosters={highlightPosters}
           highlighting={lit.length > 0}
         />
       )}

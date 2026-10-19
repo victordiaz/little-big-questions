@@ -201,7 +201,7 @@ flowchart LR
 
 ![The studio, and the same set at 4:3 on a CRT](docs/images/presenter-studio.jpg)
 
-**On the TV.** The show isn't a video: it is the live React page laid onto the CRT's glass in 3D with three's `CSS3DRenderer`, with scanlines and a curved-glass look added in CSS. Pressing **Watch TV** lights up the team and partner posters, flies the camera to the set, switches it on, and plays the intro, the week's stories and the outro. Then the set switches itself off.
+**On the TV.** The show isn't a video: it is the live React page laid onto the CRT's glass in 3D with three's `CSS3DRenderer`, with scanlines and a curved-glass look added in CSS. The app opens on what the show is about and a **Play** button. Play flies the camera to the set, switches it on, and plays the intro, the week's stories and the outro. Then the set switches itself off and the camera shots appear, so you can look around the room, or press **Play again** to watch the programme from the start.
 
 ## The bedroom
 
@@ -296,7 +296,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173/` for the bedroom (press **Watch TV**), `http://localhost:5173/?debug` for the TV remote panel, and `http://localhost:5173/labs` for the experiments.
+Open `http://localhost:5173/` for the bedroom (press **Play**), `http://localhost:5173/?debug` for the TV remote panel, and `http://localhost:5173/labs` for the experiments.
 
 ## Team
 
