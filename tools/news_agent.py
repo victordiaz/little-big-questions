@@ -251,7 +251,7 @@ def parse_json(text):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--days", type=int, default=1, help="how far back to search")
+    parser.add_argument("--days", type=int, default=2, help="how far back to search")
     parser.add_argument("--candidates", type=int, default=15, help="Tavily results per query (max 20)")
     parser.add_argument("--count", type=int, default=3, help="how many stories to make")
     parser.add_argument("--out", default="news", help="output directory")
