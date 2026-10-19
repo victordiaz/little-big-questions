@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- The logo mark (src/labs/brand.jsx): a coral question mark whose dot is a smiling Earth -->
+  <defs>
+    <clipPath id="globe"><circle r="50"/></clipPath>
+    <radialGradient id="shade" cx="35%" cy="30%" r="75%">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.45"/>
+      <stop offset="0.55" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#0b1b4a" stop-opacity="0.35"/>
+    </radialGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="#1d2350"/>
+  <g transform="translate(128 130) scale(0.92) translate(-106 -115)">
+    <path d="M52 70C52 34 80 16 108 16C142 16 160 40 160 66C160 92 140 104 122 114C106 123 100 134 100 152" fill="none" stroke="#ff6b5a" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+    <g transform="translate(100 200) scale(0.6)">
+      <circle r="50" fill="#3fa7f5"/>
+      <g clip-path="url(#globe)" fill="#7ed957">
+        <path d="M-40 -25q10-15 25-8q12 6 6 18q-8 10-2 22q4 12-10 10q-14-4-16-18q-2-10-3-24z"/>
+        <path d="M5 -38q18-8 30 2q8 8-2 14q-12 4-20-2q-10-4-8-14z"/>
+        <path d="M14 4q14-6 24 4q6 12-4 24q-10 8-18-2q-8-12-2-26z"/>
+        <path d="M-30 30q12-2 16 6q-4 8-14 6q-6-4-2-12z"/>
+      </g>
+      <circle r="50" fill="url(#shade)"/>
+      <ellipse cx="-14" cy="-4" rx="5" ry="7" fill="#1d2350"/>
+      <ellipse cx="14" cy="-4" rx="5" ry="7" fill="#1d2350"/>
+      <path d="M-10 12q10 10 20 0" fill="none" stroke="#1d2350" stroke-width="4" stroke-linecap="round"/>
+    </g>
+  </g>
+</svg>
