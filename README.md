@@ -181,7 +181,7 @@ The fake lettering came from two training frames with text in them. Dropping the
 
 ![Base vs LoRA](bfl-challenge/base_vs_lora.jpg)
 
-**The film.** The four pictures of "Why are Ukraine and Russia fighting?" were redrawn with the LoRA, and `news_video.py` animated them again. The result is [`bfl-challenge/film.mp4`](bfl-challenge/film.mp4) (61 seconds), and the style holds across all four scenes. It was our entry for the Black Forest Labs hackathon track **Media Generation: Train a Style, Tell a Story**. For the demo in the app, the narration is sped up 1.2× without changing its pitch, which brings the story down to 45 seconds.
+**The film.** The four pictures of "Why are Ukraine and Russia fighting?" were redrawn with the LoRA, and `news_video.py` animated them again. The result is [`bfl-challenge/film.mp4`](bfl-challenge/film.mp4) (61 seconds), and the style holds across all four scenes. It was our entry for the Black Forest Labs hackathon track **Media Generation: Train a Style, Tell a Story**.
 
 The training frames come from copyrighted Zagreb Film episodes, so the LoRA is a hackathon experiment, not something to publish more widely until that's sorted out.
 
