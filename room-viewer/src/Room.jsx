@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { CSS3DObject, CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
-import { useGLTF, useVideoTexture } from '@react-three/drei'
+import { useGLTF } from '@react-three/drei'
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js'
+import { deinterleaveGeometry, mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { createCRTMaterial } from './crtMaterial.js'
 import { playCRTSound } from './crtSound.js'
 
@@ -55,6 +56,11 @@ export default function Room({ videoSrc, feedEl, muted, tvOn, onToggleTV, lit = 
   }, [gl, scene])
 
   useEffect(() => {
+    // StrictMode runs this twice on the same cached scene; the second pass has nothing to do
+    if (scene.userData.prepared) return
+    scene.userData.prepared = true
+    // one unlit material per glowing material, not per mesh, so their meshes can be merged below
+    const unlit = new Map()
     scene.traverse((obj) => {
       if (!obj.isMesh) return
       obj.castShadow = !NO_SHADOW.has(obj.name) && obj.name !== 'Ground'
@@ -64,15 +70,15 @@ export default function Room({ videoSrc, feedEl, muted, tvOn, onToggleTV, lit = 
       // The power LED is driven by the TV state below instead.
       const m = obj.material
       if (obj.name !== 'TVPowerLED' && m?.emissive && !m.emissiveMap && m.emissiveIntensity > 0 && m.emissive.getHex() !== 0) {
-        obj.material = new THREE.MeshBasicMaterial({
-          color: m.emissive.clone().multiplyScalar(m.emissiveIntensity),
-        })
+        if (!unlit.has(m)) unlit.set(m, new THREE.MeshBasicMaterial({ color: m.emissive.clone().multiplyScalar(m.emissiveIntensity) }))
+        obj.material = unlit.get(m)
         obj.castShadow = false
       }
       if (obj.name === 'LavaGlass') {
         Object.assign(obj.material, { transparent: true, opacity: LAVA_GLASS_OPACITY, depthWrite: false })
       }
     })
+    mergeStatic(scene)
   }, [scene])
 
   // Each partner poster lights up with its own image (the map doubles as emission), its frame
@@ -159,6 +165,57 @@ export default function Room({ videoSrc, feedEl, muted, tvOn, onToggleTV, lit = 
   )
 }
 
+// Parts the code finds by name (to click, light up or animate), which must stay separate meshes.
+const isLive = (name) =>
+  TV_PARTS.has(name) || name.startsWith('Lava') || HIGHLIGHT_POSTERS.some((p) => name === p || name === `${p}Backing`)
+
+/**
+ * The model has ~280 meshes, one draw call each. Everything that never moves is merged by
+ * material into one mesh per material, in place and looking the same, which cuts the draw calls
+ * to a fraction (it matters most on phones).
+ */
+// draws nothing: its bounding sphere is empty, so it's culled before reaching the renderer
+const EMPTY = new THREE.BufferGeometry()
+EMPTY.boundingSphere = new THREE.Sphere(new THREE.Vector3(), -1)
+
+function mergeStatic(scene) {
+  scene.updateMatrixWorld(true)
+  const toScene = new THREE.Matrix4().copy(scene.matrixWorld).invert()
+  const groups = new Map()
+  scene.traverse((obj) => {
+    if (!obj.isMesh) return
+    let live = false
+    for (let o = obj; o && o !== scene; o = o.parent) live ||= isLive(o.name)
+    const matrix = new THREE.Matrix4().multiplyMatrices(toScene, obj.matrixWorld)
+    // mirrored meshes would turn inside out once baked, so they stay as they are
+    if (live || matrix.determinant() < 0) return
+    // baked into place, and with plain (not interleaved) attributes so they can be concatenated
+    const g = obj.geometry.clone().applyMatrix4(matrix)
+    deinterleaveGeometry(g)
+    const layout = Object.entries(g.attributes)
+      .map(([k, a]) => `${k}:${a.itemSize}:${a.array.constructor.name}:${a.normalized}:${a.gpuType}`)
+      .sort()
+      .join()
+    const key = [obj.material.uuid, obj.castShadow, obj.receiveShadow, layout, !!g.index].join('|')
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push({ obj, geometry: g })
+  })
+  for (const meshes of groups.values()) {
+    if (meshes.length < 2) continue
+    const merged = mergeGeometries(meshes.map((m) => m.geometry))
+    if (!merged) continue
+    const { material, castShadow, receiveShadow } = meshes[0].obj
+    const mesh = new THREE.Mesh(merged, material)
+    Object.assign(mesh, { castShadow, receiveShadow })
+    // A merged mesh with children (the tape on a box) stays as an empty, so they keep their place.
+    for (const { obj } of meshes) {
+      if (obj.children.length) obj.geometry = EMPTY
+      else obj.removeFromParent()
+    }
+    scene.add(mesh)
+  }
+}
+
 function useLavaLamp(scene) {
   const blobs = useMemo(
     () =>
@@ -204,9 +261,34 @@ const POWER_OFF_TIME = 0.45
 const TV_GLOW = 25 / (0.45 * 0.45 * Math.PI)
 RectAreaLightUniformsLib.init()
 
+// A looping, muted video file as a texture. (drei's useVideoTexture would do, but it brings
+// hls.js for streams, about a quarter of the viewer's download.)
+function useVideoFile(src) {
+  const texture = useMemo(() => {
+    const video = Object.assign(document.createElement('video'), {
+      src,
+      crossOrigin: 'anonymous',
+      loop: true,
+      muted: true,
+      playsInline: true,
+    })
+    return new THREE.VideoTexture(video)
+  }, [src])
+  // pause and free the GPU copy, but keep the element: StrictMode runs this cleanup and then
+  // carries on with the same texture
+  useEffect(
+    () => () => {
+      texture.image.pause()
+      texture.dispose()
+    },
+    [texture],
+  )
+  return texture
+}
+
 /** Plays a video on the TV through a CRT shader and animates the tube switching on and off. */
 function TVVideo({ screen, src, muted, on }) {
-  const texture = useVideoTexture(src, { muted: true, loop: true, start: true, playsInline: true })
+  const texture = useVideoFile(src)
   const material = useMemo(() => createCRTMaterial(texture), [texture])
   const glow = useRef()
   const firstRender = useRef(true)

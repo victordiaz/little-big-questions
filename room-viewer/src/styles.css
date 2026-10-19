@@ -528,7 +528,8 @@ button {
   line-height: 1.5;
 }
 
-.readme img {
+.readme img,
+.readme video {
   display: block;
   max-width: 100%;
   margin: 16px 0;
@@ -557,12 +558,13 @@ button {
 }
 
 /* Image grids (raw HTML tables in the README): equal columns that fill the width */
-.readme table:has(img) {
+.readme table:has(img, video) {
   display: table;
   table-layout: fixed;
 }
 
-.readme td img {
+.readme td img,
+.readme td video {
   width: 100%;
   margin: 0;
 }

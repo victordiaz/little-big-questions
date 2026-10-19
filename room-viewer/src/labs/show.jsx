@@ -248,7 +248,7 @@ const VOICE = Object.values(import.meta.glob('./olive-voice.json', { eager: true
 
 // The recording for a line, unless the line was rewritten after it was recorded.
 function voiceFor(key, text) {
-  return VOICE[key]?.text === text ? `/voices/olive/${key}.wav` : null
+  return VOICE[key]?.text === text ? `/voices/olive/${key}.mp3` : null
 }
 
 // Shows a line in the bubble. With a recording, the text follows the audio and Olive talks

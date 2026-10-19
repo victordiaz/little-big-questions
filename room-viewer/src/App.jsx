@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import * as THREE from 'three'
 import { Canvas, useFrame } from '@react-three/fiber'
@@ -7,7 +7,6 @@ import { EffectComposer, N8AO, ToneMapping } from '@react-three/postprocessing'
 import { ToneMappingMode } from 'postprocessing'
 import Room, { HIGHLIGHT_POSTERS } from './Room.jsx'
 import CameraRig, { SHOTS } from './CameraRig.jsx'
-import InfoPanel from './InfoPanel.jsx'
 import TVControls, { CHANNELS } from './TVControls.jsx'
 import { INTRO_SECONDS, OUTRO_SECONDS, Intro, Outro } from './labs/intro.jsx'
 import { Newsroom, useShow } from './labs/show.jsx'
@@ -32,6 +31,11 @@ const POSTER_HOLD_MS = 700
 const START_CHANNEL = new URLSearchParams(window.location.search).get('channel')
 // The TV panel (channels, the show's rundown, posters) only shows with ?debug.
 const DEBUG = new URLSearchParams(window.location.search).has('debug')
+
+// The info panel renders the README with a markdown stack about a sixth the size of the viewer,
+// so it loads on its own: in the background once the room is ready, or when first opened.
+const loadInfoPanel = () => import('./InfoPanel.jsx')
+const InfoPanel = lazy(loadInfoPanel)
 
 // The welcome card: what the show is for, then the three things it wants kids to take away.
 const ABOUT = {
@@ -63,8 +67,13 @@ export default function App() {
   // false until the room has loaded and drawn its first frames; the loading screen covers it till then
   const [ready, setReady] = useState(false)
   useEffect(() => {
-    if (ready) hideBoot()
+    if (!ready) return
+    hideBoot()
+    const idle = window.requestIdleCallback ?? ((f) => setTimeout(f, 2000))
+    idle(() => loadInfoPanel())
   }, [ready])
+  // mounted from the first open on, so closing it can still animate
+  const [infoUsed, setInfoUsed] = useState(false)
   // 'welcome' shows what the show is about and a Play button, 'playing' runs the programme once,
   // 'explore' shows the camera shots. Debug and ?channel= links go straight to exploring.
   const [stage, setStage] = useState(DEBUG || START_CHANNEL ? 'explore' : 'welcome')
@@ -346,11 +355,15 @@ export default function App() {
         />
       )}
       {ready && (
-        <button className="info-button" onClick={() => setInfoOpen(true)} aria-label="How this was made">
+        <button className="info-button" onClick={() => (setInfoUsed(true), setInfoOpen(true))} aria-label="How this was made">
           i
         </button>
       )}
-      <InfoPanel open={infoOpen} onClose={() => setInfoOpen(false)} />
+      {infoUsed && (
+        <Suspense fallback={null}>
+          <InfoPanel open={infoOpen} onClose={() => setInfoOpen(false)} />
+        </Suspense>
+      )}
       {dragging && <div className="drop-hint">Drop to play on the TV</div>}
     </div>
   )

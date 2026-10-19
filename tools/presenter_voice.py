@@ -11,14 +11,16 @@ Chatterbox clones the voice of a Fish Audio voice's sample clip. Start the serve
     uv run tools/presenter_voice.py --only war-intro --force
     uv run tools/presenter_voice.py --model multilingual --exaggeration 0.7
 
-Writes room-viewer/public/voices/olive/<story>-<intro|outro>.wav and records each line's
-text and length in room-viewer/src/labs/olive-voice.json, which the show reads. A line is
-skipped when its wav exists and its text hasn't changed, unless --force.
+Writes room-viewer/public/voices/olive/<story>-<intro|outro>.mp3 (Chatterbox's wav, encoded with
+ffmpeg: about a fifth of the size) and records each line's text and length in
+room-viewer/src/labs/olive-voice.json, which the show reads. A line is skipped when its mp3
+exists and its text hasn't changed, unless --force.
 """
 import argparse
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -92,7 +94,7 @@ def main():
     todo = [
         (key, text)
         for key, text in lines
-        if args.force or manifest.get(key, {}).get("text") != text or not (OUT / f"{key}.wav").exists()
+        if args.force or manifest.get(key, {}).get("text") != text or not (OUT / f"{key}.mp3").exists()
     ]
     if not todo:
         print("Every line is voiced already (use --force to redo).")
@@ -116,7 +118,12 @@ def main():
         if not response.ok:
             print(f"  failed: {response.status_code} {response.text[:300]}")
             continue
-        (OUT / f"{key}.wav").write_bytes(response.content)
+        # VBR ~70 kbps mono, transparent for speech
+        subprocess.run(
+            ["ffmpeg", "-v", "error", "-y", "-i", "pipe:0", "-c:a", "libmp3lame", "-q:a", "2", str(OUT / f"{key}.mp3")],
+            input=response.content,
+            check=True,
+        )
         manifest[key] = {"text": text, "seconds": wav_seconds(response.content), "voice": voice, "model": args.model}
         # Saved after every line, so stopping halfway keeps what's done
         MANIFEST.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")

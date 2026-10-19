@@ -8,7 +8,8 @@ import GithubSlugger from 'github-slugger'
 import readme from '../../README.md?raw'
 
 // README image paths are relative to the repo root (docs/images/…, bfl-challenge/…); map them to bundled URLs.
-const IMAGES = import.meta.glob(['../../docs/images/*', '../../bfl-challenge/**/*.jpg'], {
+// GIFs are left out: the panel plays the MP4 beside each one instead (a quarter of the size).
+const IMAGES = import.meta.glob(['../../docs/images/*', '!../../docs/images/*.gif', '../../bfl-challenge/**/*.jpg'], {
   eager: true,
   query: '?url',
   import: 'default',
@@ -79,6 +80,8 @@ const components = {
     return <pre {...props}>{children}</pre>
   },
   img({ node, src, alt, ...props }) {
+    const video = src.endsWith('.gif') && IMAGES[`../../${src.replace(/\.gif$/, '.mp4')}`]
+    if (video) return <video src={video} aria-label={alt} autoPlay loop muted playsInline />
     return <img src={resolveImage(src)} alt={alt} loading="lazy" {...props} />
   },
   a({ node, href = '', children, ...props }) {

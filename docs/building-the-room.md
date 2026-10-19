@@ -118,7 +118,7 @@ The **DGX Spark** is a beveled champagne box at 1.4× real size (150 × 150 × 5
 
 ## Step 5: exporting to glTF
 
-The scene is exported to `room-viewer/public/models/retro_bedroom.glb` (about 3.3 MB, JPEG textures). A few things had to change first, because glTF only understands UV-mapped image textures:
+The scene is exported to `room-viewer/public/models/retro_bedroom.glb` (about 2.7 MB after deduplication, JPEG textures). A few things had to change first, because glTF only understands UV-mapped image textures:
 
 | Blender setup | Problem in glTF | Fix |
 |---|---|---|
@@ -381,4 +381,10 @@ bpy.ops.export_scene.gltf(
     export_lights=False, export_cameras=False,
     export_image_format="JPEG", export_jpeg_quality=85,
 )
+```
+
+Then drop the duplicate textures and meshes the exporter writes (lossless; about a fifth smaller, every object and name kept):
+
+```sh
+npx @gltf-transform/cli dedup room-viewer/public/models/retro_bedroom.glb room-viewer/public/models/retro_bedroom.glb
 ```
