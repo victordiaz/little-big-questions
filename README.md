@@ -6,6 +6,8 @@ Nobody writes or draws these stories by hand. An agent reads the week's news, pi
 
 **▶ See it live:** https://littlebigquestions.pixeletes.com/
 
+**Code:** https://github.com/victordiaz/little-big-questions
+
 <table>
   <tr>
     <th width="50%">The bedroom, in 3D</th>
@@ -307,7 +309,6 @@ Little Big Questions was built by three people at the Nebius Build Week Hackatho
 - **Posters, textures and labs concepts** generated with [FLUX 3 Image](https://docs.bfl.ai/) by Black Forest Labs; story images with FLUX 3 Klein and story videos with FLUX 3 Video.
 - **The Balthazar style LoRA** trained by a teammate with [AI Toolkit](https://github.com/ostris/ai-toolkit) on a [Nebius AI Cloud](https://nebius.com/) GPU, from frames of *Professor Balthazar* by Zagreb Film.
 - **News** found with [Tavily](https://www.tavily.com/) and written for kids by NVIDIA Nemotron 3.5 Super VL on [Nebius Token Factory](https://nebius.com/).
-- **The narrator's voice** in the story videos made with Chatterbox, cloned from the sample of the [Fish Audio voice "Dash (PBS KIDS)"](https://fish.audio/m/0ace0d3ff3cd403e88e751d4d9485020/).
+- **Voices** made with [Chatterbox](https://github.com/resemble-ai/chatterbox) by Resemble AI, cloned from Fish Audio samples: ["Dash (PBS KIDS)"](https://fish.audio/m/0ace0d3ff3cd403e88e751d4d9485020/) for the narrator of the story videos and ["kids"](https://fish.audio/m/7c9a5cb2f8914bd1963d4237e540c036/) for Olive.
 - **Jingle**: "Positive Orchestral Jingle" by sergequadrado, [Freesound #455606](https://freesound.org/s/455606/).
-- **Olive's voice** made with [Chatterbox](https://github.com/resemble-ai/chatterbox) by Resemble AI, cloned from the sample of the [Fish Audio voice "kids"](https://fish.audio/m/7c9a5cb2f8914bd1963d4237e540c036/).
 - **Fonts**: [Fredoka](https://fonts.google.com/specimen/Fredoka), [Nunito](https://fonts.google.com/specimen/Nunito) and [Press Start 2P](https://fonts.google.com/specimen/Press+Start+2P) from Google Fonts.
