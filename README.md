@@ -294,7 +294,7 @@ Open `http://localhost:5173/` for the bedroom (press **Watch TV**), `http://loca
 
 ## Team
 
-Little Big Questions was built by three people at the Nebius Build Week hackathon in Berlin, 18 October 2026:
+Little Big Questions was built by three people at the Nebius Build Week Hackathon in partnership with NVIDIA in Berlin, 18 October 2026:
 
 - [victordiaz](https://github.com/victordiaz)
 - [jurecerkez](https://huggingface.co/jurecerkez), who trained the Balthazar style LoRA
