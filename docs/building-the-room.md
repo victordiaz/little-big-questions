@@ -185,7 +185,7 @@ Where the samples landed: ground, walls and floor are within a few RGB values of
 
 ### Camera shots
 
-`CameraRig.jsx` uses drei's `CameraControls`. Its `setLookAt(…, true)` animates the move and returns a promise when the camera arrives, which is what lets the TV switch on at the right moment. Shots: **Overview** (fitted to the window), **Watch TV**, **Posters**, **DGX Spark** and **From bed**.
+`CameraRig.jsx` uses drei's `CameraControls`. Its `setLookAt(…, true)` animates the move and returns a promise when the camera arrives, which is what lets the TV switch on at the right moment. Shots: **Overview** (fitted to the window), **Watch TV**, **Posters** and **From bed** (a **DGX Spark** close-up was dropped later).
 
 ![Camera shots](images/app-shots.jpg)
 

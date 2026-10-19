@@ -9,11 +9,26 @@ body,
   background: #3b3456;
   font-family: system-ui, -apple-system, sans-serif;
   color: #f3eefc;
+  /* touch: no pull-to-refresh or bounce while dragging the room, no grey flash on tap */
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  touch-action: manipulation;
+}
+
+/* Fixed controls keep clear of notches and the home indicator (viewport-fit=cover). */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
 }
 
 .shots {
   position: fixed;
-  top: 16px;
+  top: calc(16px + var(--safe-top));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -67,9 +82,8 @@ body,
 /* Phones: short labels on one row, clear of the info button on the right */
 @media (max-width: 600px) {
   .shots {
-    top: 16px;
-    left: 12px;
-    right: 60px;
+    left: calc(12px + var(--safe-left));
+    right: calc(64px + var(--safe-right));
     transform: none;
     max-width: none;
     flex-wrap: nowrap;
@@ -79,9 +93,15 @@ body,
 
   .shots button {
     flex: 1 1 auto;
-    padding: 7px 8px;
-    font-size: 13px;
+    padding: 9px 8px;
+    font-size: 14px;
     white-space: nowrap;
+  }
+
+  .shots button.replay {
+    flex: none;
+    margin-left: 2px;
+    padding: 9px 12px;
   }
 
   .shot-label {
@@ -145,21 +165,62 @@ body,
   transform: scale(1.05);
 }
 
+/* the logo scales from --lk (the cap height of "BIG"), so phones get a smaller one */
+.welcome .lockup-x {
+  --lk: 44px !important;
+}
+
+.welcome .logo-mark {
+  width: calc(var(--lk) * 1.9);
+  height: auto;
+}
+
 @media (max-width: 600px) {
   .welcome {
     padding: 24px 20px 20px;
     gap: 16px;
   }
 
+  .welcome .lockup-x {
+    --lk: 32px !important;
+  }
+
   .welcome p {
     font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .welcome-play {
+    width: 100%;
+    padding: 14px 32px;
+  }
+}
+
+/* landscape phones: little height, so the text and Play go first */
+@media (max-height: 480px) {
+  .welcome {
+    padding: 20px 24px;
+    gap: 14px;
+  }
+
+  .welcome .lockup-x {
+    display: none;
+  }
+
+  .welcome p {
+    font-size: 14px;
+  }
+
+  .welcome-play {
+    width: auto;
+    padding: 10px 32px;
   }
 }
 
 /* While the programme plays, the only way out of it */
 .skip-button {
   position: fixed;
-  bottom: 16px;
+  bottom: calc(16px + var(--safe-bottom));
   left: 50%;
   transform: translateX(-50%);
   z-index: 5;
@@ -180,8 +241,8 @@ body,
 
 .info-button {
   position: fixed;
-  top: 16px;
-  right: 16px;
+  top: calc(16px + var(--safe-top));
+  right: calc(16px + var(--safe-right));
   width: 36px;
   height: 36px;
   border: 0;
@@ -194,6 +255,14 @@ body,
 
 .info-button:hover {
   background: rgba(20, 16, 36, 0.9);
+}
+
+/* the same height as the shots bar next to it, and an easier tap */
+@media (max-width: 600px) {
+  .info-button {
+    width: 42px;
+    height: 42px;
+  }
 }
 
 /* Full-screen overlay above the whole scene and HUD; it scrolls as one page. */
@@ -211,8 +280,8 @@ body,
 
 .info-close {
   position: fixed;
-  top: 16px;
-  right: 16px;
+  top: calc(16px + var(--safe-top));
+  right: calc(16px + var(--safe-right));
   z-index: 11;
   width: 40px;
   height: 40px;
@@ -305,11 +374,52 @@ body,
 @media (max-width: 960px) {
   .info-layout {
     grid-template-columns: minmax(0, 760px);
-    padding: 0 16px;
+    padding: 0 calc(16px + var(--safe-right)) 0 calc(16px + var(--safe-left));
   }
 
   .info-toc {
     display: none;
+  }
+
+  /* room for the close button above the logo */
+  .readme {
+    padding-top: calc(64px + var(--safe-top));
+    padding-bottom: calc(64px + var(--safe-bottom));
+  }
+}
+
+@media (max-width: 600px) {
+  .readme {
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  .readme h2 {
+    font-size: 20px;
+  }
+
+  .readme table {
+    font-size: 13px;
+  }
+
+  .readme th,
+  .readme td {
+    padding: 6px 8px;
+  }
+
+  /* image grids: tighter cells, so the pictures stay as big as possible */
+  .readme td:has(img) {
+    padding: 3px;
+  }
+
+  /* diagrams scroll sideways rather than shrinking until the labels can't be read */
+  .readme .diagram {
+    padding: 12px;
+    text-align: left;
+  }
+
+  .readme .diagram svg {
+    min-width: 600px;
   }
 }
 
