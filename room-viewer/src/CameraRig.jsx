@@ -36,8 +36,10 @@ export const SHOTS = {
     position: [2.1, 0.95, -2.5],
     target: [0.5, 1.14, -2.6],
     smoothTime: 1.1,
-    // switches the set on once seated; one that's already on stays on
+    // switches the set on as the camera settles (the move's eased tail takes seconds to come to
+    // rest, too long to wait); one that's already on stays on
     tvAfter: true,
+    tvDelay: 1.2,
   },
   posters: { label: 'Posters', short: 'Posters', position: [1.9, 1.55, 0.9], target: [1.9, 1.7, -4], smoothTime: 0.9 },
   bed: { label: 'From bed', short: 'Bed', position: [3.45, 1.15, -3.55], target: [0.5, 1.1, -2.6], smoothTime: 1.0 },
@@ -81,10 +83,10 @@ export default function CameraRig({ shot, onTvChange }) {
     c.maxAzimuthAngle = Math.max(AZIMUTH_MAX, azimuth)
     c.smoothTime = s.smoothTime
     if (s.tvBefore !== undefined) onTvChange(s.tvBefore)
-    c.setLookAt(...position, ...target, true).then(() => {
-      if (run.current !== id) return
-      if (s.tvAfter !== undefined) setTimeout(() => run.current === id && onTvChange(s.tvAfter), 400)
-    })
+    c.setLookAt(...position, ...target, true)
+    if (s.tvAfter === undefined) return
+    const timer = setTimeout(() => run.current === id && onTvChange(s.tvAfter), s.tvDelay * 1000)
+    return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shot])
 
