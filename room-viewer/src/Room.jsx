@@ -28,6 +28,17 @@ const FRAME_GLOW = new THREE.Color('#ffc93c').multiplyScalar(2.5)
 const LED_ON = new THREE.Color(0.2, 2.5, 0.4)
 const LED_OFF = new THREE.Color(0.25, 0.02, 0.02)
 
+// Lava lamp. The glass (LavaGlass) is a cone from y 0.815 (radius 0.04) to y 1.095 (radius 0.075);
+// it's drawn see-through so the wax shows. Each blob rises and sinks on its own slow cycle,
+// stretching while it moves and squashing at the ends.
+const LAVA_GLASS = { bottom: 0.815, top: 1.095, r0: 0.04, r1: 0.075 }
+const LAVA_GLASS_OPACITY = 0.45
+const LAVA_BLOBS = [
+  { name: 'LavaBlob0', r: 0.024, period: 17, phase: 0 },
+  { name: 'LavaBlob1', r: 0.03, period: 23, phase: 2.4 },
+  { name: 'LavaBlob2', r: 0.02, period: 13, phase: 4.1 },
+]
+
 // `feedEl`, when given, is a DOM element with live HTML (the logo intro or the news show, rendered
 // into it by App through a portal) that is shown on the TV instead of the video.
 // `lit`: the names of the partner posters lit up right now.
@@ -57,6 +68,9 @@ export default function Room({ videoSrc, feedEl, muted, tvOn, onToggleTV, lit = 
           color: m.emissive.clone().multiplyScalar(m.emissiveIntensity),
         })
         obj.castShadow = false
+      }
+      if (obj.name === 'LavaGlass') {
+        Object.assign(obj.material, { transparent: true, opacity: LAVA_GLASS_OPACITY, depthWrite: false })
       }
     })
   }, [scene])
@@ -108,6 +122,8 @@ export default function Room({ videoSrc, feedEl, muted, tvOn, onToggleTV, lit = 
     }
   })
 
+  useLavaLamp(scene)
+
   const screen = useMemo(() => scene.getObjectByName('TVScreenImg'), [scene])
   const led = useMemo(() => scene.getObjectByName('TVPowerLED'), [scene])
 
@@ -141,6 +157,43 @@ export default function Room({ videoSrc, feedEl, muted, tvOn, onToggleTV, lit = 
       )}
     </>
   )
+}
+
+function useLavaLamp(scene) {
+  const blobs = useMemo(
+    () =>
+      LAVA_BLOBS.map((b) => {
+        const obj = scene.getObjectByName(b.name)
+        if (!obj) return null
+        obj.geometry.computeBoundingSphere()
+        // world radius per unit of scale
+        const unit = obj.geometry.boundingSphere.radius
+        // room for the blob stretched to 1.4x its height at either end of the glass
+        const lo = LAVA_GLASS.bottom + b.r * 1.4 + 0.004
+        const hi = LAVA_GLASS.top - b.r * 1.4 - 0.004
+        return { ...b, obj, unit, lo, hi }
+      }).filter(Boolean),
+    [scene],
+  )
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime
+    for (const b of blobs) {
+      const w = (2 * Math.PI) / b.period
+      const a = w * t + b.phase
+      // 0 at the bottom, 1 at the top: lingers at both ends like warming and cooling wax
+      const k = 0.5 - 0.5 * Math.cos(a)
+      const speed = Math.abs(Math.sin(a))
+      const y = b.lo + (b.hi - b.lo) * k
+      const stretch = 1 + 0.4 * speed
+      const wobble = 1 + 0.06 * Math.sin(t * 1.7 + b.phase * 3)
+      // keep it off the glass, which narrows towards the bottom
+      const glassR = LAVA_GLASS.r0 + ((y - LAVA_GLASS.bottom) / (LAVA_GLASS.top - LAVA_GLASS.bottom)) * (LAVA_GLASS.r1 - LAVA_GLASS.r0)
+      const r = Math.min((b.r * wobble) / Math.sqrt(stretch), glassR * 0.8)
+      b.obj.position.y = y
+      b.obj.scale.set(r / b.unit, (b.r * stretch) / wobble / b.unit, r / b.unit)
+    }
+  })
 }
 
 // Seconds for the CRT power-on / power-off animation.
