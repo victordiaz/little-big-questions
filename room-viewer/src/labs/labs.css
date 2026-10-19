@@ -1484,6 +1484,11 @@
   width: 14cqw;
 }
 
+/* holds the shared story video (media.js) without becoming a box of its own */
+.set-video {
+  display: contents;
+}
+
 .set-screen video,
 .set-screen canvas {
   position: absolute;

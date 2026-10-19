@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Olive from './Olive.jsx'
 import { Globe, LogoMark, Wordmark } from './brand.jsx'
 import storiesJson from './stories.json'
+import { sharedAudio, storyVideo } from './media.js'
 
 // The news show: the rundown of stories, the logic that steps through it, and the studio that
 // renders it. Used by /labs/presenter and by the bedroom TV in the main app.
@@ -73,13 +74,33 @@ export function Newsroom({ story, segment, auto, onDone, voice = false }) {
   const line = segment === 'intro' ? story.intro : segment === 'outro' ? story.outro : ''
   const key = `${story.id}-${segment}`
   const { typed, talking } = useLine(line, key, voice ? voiceFor(key, line) : null)
-  const videoRef = useRef(null)
+  // one element for every mount, so Play can unlock its sound on iOS (media.js)
+  const videoRef = useRef(storyVideo())
+  const videoHost = useRef(null)
   const [videoTime, setVideoTime] = useState(0)
   const onDoneRef = useRef(onDone)
   onDoneRef.current = onDone
+  const endRef = useRef(null)
+  endRef.current = () => auto && segment === 'video' && onDoneRef.current()
+
+  useEffect(() => {
+    const v = videoRef.current
+    const host = videoHost.current
+    const time = () => setVideoTime(v.currentTime)
+    const ended = () => endRef.current()
+    host.appendChild(v)
+    v.addEventListener('timeupdate', time)
+    v.addEventListener('ended', ended)
+    return () => {
+      v.pause()
+      v.removeEventListener('timeupdate', time)
+      v.removeEventListener('ended', ended)
+      v.remove()
+    }
+  }, [])
 
   // Advance on its own when "Run the show" is on: after a line is finished, or when the story
-  // video ends (its onEnded below).
+  // video ends (its 'ended' listener above).
   useEffect(() => {
     if (!auto || segment === 'video' || talking) return
     const t = setTimeout(onDone, segment === 'outro' ? 3000 : 1500)
@@ -97,6 +118,9 @@ export function Newsroom({ story, segment, auto, onDone, voice = false }) {
   useEffect(() => {
     const v = videoRef.current
     if (!v) return
+    // the unlock (or another story) may have left a different source in it; set it early so the
+    // video is ready by the time its segment comes
+    if (story.video && v.getAttribute('src') !== story.video) v.src = story.video
     if (segment !== 'video') return v.pause()
     v.currentTime = 0
     setVideoTime(0)
@@ -111,7 +135,7 @@ export function Newsroom({ story, segment, auto, onDone, voice = false }) {
 
   // The picture is painted onto a canvas rather than shown by the <video> itself: on the TV this
   // page sits in a CSS 3D transform, and iOS Safari drops the native video layer at some angles.
-  // The (invisible) video still plays the sound and drives the captions.
+  // The video still plays the sound and drives the captions.
   const canvasRef = useRef(null)
   useEffect(() => {
     const v = videoRef.current
@@ -154,15 +178,8 @@ export function Newsroom({ story, segment, auto, onDone, voice = false }) {
             <Globe r={50} />
           </svg>
         </div>
-        <video
-          ref={videoRef}
-          src={story.video}
-          muted
-          playsInline
-          preload="metadata"
-          onTimeUpdate={(e) => setVideoTime(e.currentTarget.currentTime)}
-          onEnded={() => auto && segment === 'video' && onDoneRef.current()}
-        />
+        {/* the shared story video goes in here; display: contents keeps it placed by .set-screen */}
+        <div ref={videoHost} className="set-video" />
         <canvas ref={canvasRef} aria-hidden="true" />
       </div>
 
@@ -243,7 +260,7 @@ function useLine(text, key, src) {
   useEffect(() => {
     setState({ key, n: 0, done: !text })
     if (!text) return
-    let audio, frame, timer
+    let audio, frame, timer, ended
     // Once this line is cleaned up (next line, or StrictMode's test unmount), nothing from it may
     // touch the bubble: a late play() rejection used to start a typing loop that was never stopped.
     let cancelled = false
@@ -260,15 +277,17 @@ function useLine(text, key, src) {
     }
 
     if (src) {
-      audio = new Audio(src)
+      audio = sharedAudio('voice')
+      audio.src = src
       const follow = () => {
         if (audio.duration) set(Math.ceil((text.length * audio.currentTime) / audio.duration), false)
         frame = requestAnimationFrame(follow)
       }
-      audio.addEventListener('ended', () => {
+      ended = () => {
         cancelAnimationFrame(frame)
         set(text.length, true)
-      })
+      }
+      audio.addEventListener('ended', ended)
       audio
         .play()
         .then(() => {
@@ -284,6 +303,7 @@ function useLine(text, key, src) {
       clearInterval(timer)
       cancelAnimationFrame(frame)
       audio?.pause()
+      audio?.removeEventListener('ended', ended)
     }
   }, [text, key, src])
 

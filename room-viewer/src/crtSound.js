@@ -29,6 +29,12 @@ function tone(ac, start, duration, from, to, gain) {
   osc.stop(start + duration)
 }
 
+// iOS only starts an AudioContext from a tap: call this from one (Play does) and it stays running.
+export function unlockCRTSound() {
+  ctx ??= new AudioContext()
+  ctx.resume()
+}
+
 export function playCRTSound(on) {
   ctx ??= new AudioContext()
   ctx.resume()

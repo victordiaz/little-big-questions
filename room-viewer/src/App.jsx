@@ -12,6 +12,8 @@ import TVControls, { CHANNELS } from './TVControls.jsx'
 import { INTRO_SECONDS, OUTRO_SECONDS, Intro, Outro } from './labs/intro.jsx'
 import { Newsroom, useShow } from './labs/show.jsx'
 import { playSting } from './labs/sting.js'
+import { unlockMedia } from './labs/media.js'
+import { unlockCRTSound } from './crtSound.js'
 import { Lockup } from './labs/brand.jsx'
 import { hideBoot, setBootProgress } from './boot.js'
 import './labs/labs.css'
@@ -41,6 +43,13 @@ const ABOUT = {
     ['🤝', 'People see it\ndifferently'],
     ['❓', 'Your questions\nmatter'],
   ],
+}
+
+// iOS plays sound only when it's started from a tap, and the show's sounds start seconds after
+// Play. Called in the tap itself, this lets them play later (see media.js).
+function unlockSound() {
+  unlockMedia()
+  unlockCRTSound()
 }
 
 export default function App() {
@@ -76,6 +85,7 @@ export default function App() {
     if (!muted) playSting()
   }
   const toggleSound = () => {
+    if (muted) unlockSound()
     setMuted(!muted)
     // turning sound on mid-intro restarts it, so the jingle lines up with the animation
     if (muted && (channel === 'logo' || channel === 'outro')) {
@@ -121,6 +131,7 @@ export default function App() {
   openingRef.current = opening
   const startProgramme = () => {
     // watching means listening: the jingle and Olive's voice need sound
+    unlockSound()
     setMuted(false)
     setClosing(false)
     stopPosters()
