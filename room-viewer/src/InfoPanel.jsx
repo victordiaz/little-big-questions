@@ -1,13 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 import rehypeSlug from 'rehype-slug'
 import GithubSlugger from 'github-slugger'
 // The same README that GitHub shows, so the two never drift apart.
 import readme from '../../README.md?raw'
 
-// README image paths are relative to the repo root (docs/images/…); map them to bundled URLs.
-const IMAGES = import.meta.glob('../../docs/images/*', { eager: true, query: '?url', import: 'default' })
+// README image paths are relative to the repo root (docs/images/…, bfl-challenge/…); map them to bundled URLs.
+const IMAGES = import.meta.glob(['../../docs/images/*', '../../bfl-challenge/**/*.jpg'], {
+  eager: true,
+  query: '?url',
+  import: 'default',
+})
 const resolveImage = (src) => IMAGES[`../../${src}`] ?? src
 
 // The README's own "Contents" list is for GitHub; the app shows a sidebar instead.
@@ -157,7 +162,7 @@ export default function InfoPanel({ open, onClose }) {
             </ul>
           </nav>
           <article className="readme">
-            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]} components={components}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw, rehypeSlug]} components={components}>
               {APP_README}
             </ReactMarkdown>
           </article>

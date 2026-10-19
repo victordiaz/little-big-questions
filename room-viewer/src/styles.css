@@ -294,6 +294,17 @@ body,
   background: rgba(255, 255, 255, 0.05);
 }
 
+/* Image grids (raw HTML tables in the README): equal columns that fill the width */
+.readme table:has(img) {
+  display: table;
+  table-layout: fixed;
+}
+
+.readme td img {
+  width: 100%;
+  margin: 0;
+}
+
 .readme .diagram {
   margin: 16px 0;
   padding: 16px;
