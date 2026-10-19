@@ -12,8 +12,10 @@ const MODEL_URL = '/models/retro_bedroom.glb'
 
 // Meshes that should not block the sun (the glowing pane behind the window).
 const NO_SHADOW = new Set(['WinPane'])
-// Clicking any of these toggles the TV.
+// The TV's parts, kept apart from the merged room so they stay individually clickable and lit.
 const TV_PARTS = new Set(['TVBody', 'TVBack', 'TVScreenImg', 'TVPowerButton', 'TVPowerLED', 'TVBezelBtns'])
+// Only the power button switches the TV on and off.
+const POWER_BUTTON = 'TVPowerButton'
 
 // The posters that light up at the start of Watch TV (see App.jsx): the team first, on its own,
 // then the partners in a wave.
@@ -25,6 +27,12 @@ const POSTER_POP = 0.08
 // The frame grows more than the poster, so a glowing border shows around it.
 const FRAME_POP = 0.16
 const FRAME_GLOW = new THREE.Color('#ffc93c').multiplyScalar(2.5)
+
+// The power button glows warm and grows a little under the pointer, and sinks into the case while
+// pressed (the TV faces +x, so "in" is -x).
+const BUTTON_GLOW = new THREE.Color('#ffc93c')
+const BUTTON_HOVER = { glow: 0.6, grow: 0.12 }
+const BUTTON_PRESS = { depth: 0.005, grow: -0.06 }
 
 const LED_ON = new THREE.Color(0.2, 2.5, 0.4)
 const LED_OFF = new THREE.Color(0.25, 0.02, 0.02)
@@ -39,6 +47,35 @@ const LAVA_BLOBS = [
   { name: 'LavaBlob1', r: 0.03, period: 23, phase: 2.4 },
   { name: 'LavaBlob2', r: 0.02, period: 13, phase: 4.1 },
 ]
+
+// The tube's rounded corners as a fraction of the screen's width and height, the same as
+// .tv-feed's border-radius (styles.css) so the glass and the page on it line up.
+const SCREEN_CORNER = { x: 0.07, y: 0.09 }
+
+// The model's screen is a square-cornered unit plane (x and z from -0.5 to 0.5, facing +y, scaled
+// to size by its node). This is the same plane with rounded corners and the same UVs.
+function roundedScreen() {
+  const { x: rx, y: ry } = SCREEN_CORNER
+  const corners = [
+    [0.5 - rx, 0.5 - ry, 0],
+    [-0.5 + rx, 0.5 - ry, Math.PI / 2],
+    [-0.5 + rx, -0.5 + ry, Math.PI],
+    [0.5 - rx, -0.5 + ry, (3 * Math.PI) / 2],
+  ]
+  const points = corners.flatMap(([cx, cy, from]) =>
+    Array.from({ length: 9 }, (_, i) => {
+      const a = from + (i / 8) * (Math.PI / 2)
+      return new THREE.Vector2(cx + rx * Math.cos(a), cy + ry * Math.sin(a))
+    }),
+  )
+  const geometry = new THREE.ShapeGeometry(new THREE.Shape(points))
+  // shape x, y become the plane's x, -z, and the face turns from +z to +y
+  geometry.rotateX(-Math.PI / 2)
+  const pos = geometry.attributes.position
+  const uv = geometry.attributes.uv
+  for (let i = 0; i < pos.count; i++) uv.setXY(i, pos.getX(i) + 0.5, 0.5 - pos.getZ(i))
+  return geometry
+}
 
 // `feedEl`, when given, is a DOM element with live HTML (the logo intro or the news show, rendered
 // into it by App through a portal) that is shown on the TV instead of the video.
@@ -74,6 +111,7 @@ export default function Room({ videoSrc, feedEl, muted, tvOn, onToggleTV, lit = 
         obj.material = unlit.get(m)
         obj.castShadow = false
       }
+      if (obj.name === 'TVScreenImg') obj.geometry = roundedScreen()
       if (obj.name === 'LavaGlass') {
         Object.assign(obj.material, { transparent: true, opacity: LAVA_GLASS_OPACITY, depthWrite: false })
       }
@@ -129,6 +167,7 @@ export default function Room({ videoSrc, feedEl, muted, tvOn, onToggleTV, lit = 
   })
 
   useLavaLamp(scene)
+  const pressButton = usePowerButton(scene, hoverTV)
 
   const screen = useMemo(() => scene.getObjectByName('TVScreenImg'), [scene])
   const led = useMemo(() => scene.getObjectByName('TVPowerLED'), [scene])
@@ -143,18 +182,23 @@ export default function Room({ videoSrc, feedEl, muted, tvOn, onToggleTV, lit = 
     document.body.style.cursor = hoverTV ? 'pointer' : ''
   }, [hoverTV])
 
-  const isTV = (e) => TV_PARTS.has(e.object.name)
+  const isPower = (e) => e.object.name === POWER_BUTTON
 
   return (
     <>
       <primitive
         object={scene}
         onClick={(e) => {
-          if (!isTV(e)) return
+          if (!isPower(e)) return
           e.stopPropagation()
           onToggleTV()
         }}
-        onPointerMove={(e) => setHoverTV(isTV(e))}
+        onPointerDown={(e) => {
+          if (!isPower(e)) return
+          e.stopPropagation()
+          pressButton()
+        }}
+        onPointerMove={(e) => setHoverTV(isPower(e))}
         onPointerOut={() => setHoverTV(false)}
       />
       {screen && feedEl && <TVFeed screen={screen} el={feedEl} muted={muted} on={tvOn} />}
@@ -163,6 +207,54 @@ export default function Room({ videoSrc, feedEl, muted, tvOn, onToggleTV, lit = 
       )}
     </>
   )
+}
+
+// Hover and press feedback for the TV's power button. Returns the function to call when the
+// pointer goes down on it; it springs back when the pointer comes up, wherever that is.
+function usePowerButton(scene, hover) {
+  const pressed = useRef(false)
+  const button = useMemo(() => {
+    const obj = scene.getObjectByName(POWER_BUTTON)
+    if (!obj) return null
+    // own material, so nothing that shares it glows too; once, as StrictMode runs this twice
+    if (!obj.userData.rest) {
+      obj.material = obj.material.clone()
+      obj.material.emissive = BUTTON_GLOW.clone()
+      obj.material.emissiveIntensity = 0
+      obj.userData.rest = { x: obj.position.x, scale: obj.scale.clone() }
+    }
+    return { obj, rest: obj.userData.rest, hover: 0, press: 0 }
+  }, [scene])
+
+  useEffect(() => {
+    const release = () => (pressed.current = false)
+    window.addEventListener('pointerup', release)
+    window.addEventListener('pointercancel', release)
+    return () => {
+      window.removeEventListener('pointerup', release)
+      window.removeEventListener('pointercancel', release)
+    }
+  }, [])
+
+  useFrame((_, dt) => {
+    if (!button) return
+    const ease = (k, target, speed) => {
+      const next = k + (target - k) * Math.min(1, dt * speed)
+      return Math.abs(target - next) < 0.001 ? target : next
+    }
+    const hoverK = ease(button.hover, hover ? 1 : 0, 14)
+    // presses go in fast and come out a little slower, like a real button
+    const pressK = ease(button.press, pressed.current ? 1 : 0, pressed.current ? 40 : 18)
+    if (hoverK === button.hover && pressK === button.press) return
+    button.hover = hoverK
+    button.press = pressK
+    const { obj, rest } = button
+    obj.material.emissiveIntensity = BUTTON_HOVER.glow * hoverK
+    obj.position.x = rest.x - BUTTON_PRESS.depth * pressK
+    obj.scale.copy(rest.scale).multiplyScalar(1 + BUTTON_HOVER.grow * hoverK + BUTTON_PRESS.grow * pressK)
+  })
+
+  return () => (pressed.current = true)
 }
 
 // Parts the code finds by name (to click, light up or animate), which must stay separate meshes.
@@ -373,6 +465,11 @@ const TV_GLOW_COLOR = new THREE.Color().setRGB(0.6, 0.8, 1.0, THREE.LinearSRGBCo
 
 // Width of the HTML page laid onto the screen, in CSS px. The page keeps the screen's aspect.
 const FEED_WIDTH = 640
+// The page's scene is drawn this many times larger than the room, with the camera moved out to
+// match, so the picture is the same. At room scale (metres) the page is under a CSS px wide and
+// scaled by ~0.001; iOS Safari projects such tiny transforms wrongly and the page drifts behind
+// the glass as the camera turns. Scaled up, the page sits close to 1:1.
+const CSS_SCALE = 1000
 const GLASS_OFF = new THREE.Color(0.03, 0.033, 0.037)
 
 /**
@@ -401,7 +498,8 @@ function TVFeed({ screen, el, muted, on }) {
     Object.assign(renderer.domElement.style, { position: 'absolute', inset: '0', pointerEvents: 'none' })
     const scene = new THREE.Scene()
     const page = new CSS3DObject(el)
-    return { renderer, scene, page }
+    const view = new THREE.PerspectiveCamera()
+    return { renderer, scene, page, view }
   }, [el])
 
   useEffect(() => {
@@ -409,10 +507,10 @@ function TVFeed({ screen, el, muted, on }) {
     el.style.width = `${FEED_WIDTH}px`
     el.style.height = `${Math.round((FEED_WIDTH * height) / width)}px`
     el.style.pointerEvents = 'none'
-    page.position.set(...position)
+    page.position.set(...position).multiplyScalar(CSS_SCALE)
     page.rotation.set(0, Math.PI / 2, 0)
     // CSS3D maps one CSS px to one world unit
-    page.scale.setScalar(width / FEED_WIDTH)
+    page.scale.setScalar((CSS_SCALE * width) / FEED_WIDTH)
     // added here (not in useMemo) so it pairs with the cleanup, which StrictMode runs between mounts
     scene.add(page)
     gl.domElement.parentElement.appendChild(renderer.domElement)
@@ -443,7 +541,11 @@ function TVFeed({ screen, el, muted, on }) {
   }, [screen])
 
   useFrame((_, dt) => {
-    css.renderer.render(css.scene, camera)
+    const { view } = css
+    view.copy(camera)
+    view.position.multiplyScalar(CSS_SCALE)
+    view.updateMatrixWorld()
+    css.renderer.render(css.scene, view)
     const step = on ? dt / POWER_ON_TIME : -dt / POWER_OFF_TIME
     power.current = THREE.MathUtils.clamp(power.current + step, 0, 1)
     if (glow.current) glow.current.intensity = TV_GLOW * power.current
