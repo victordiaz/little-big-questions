@@ -1,8 +1,8 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import * as THREE from 'three'
-import { Canvas } from '@react-three/fiber'
-import { Loader } from '@react-three/drei'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { useProgress } from '@react-three/drei'
 import { EffectComposer, N8AO, ToneMapping } from '@react-three/postprocessing'
 import { ToneMappingMode } from 'postprocessing'
 import Room, { HIGHLIGHT_POSTERS } from './Room.jsx'
@@ -13,6 +13,7 @@ import { INTRO_SECONDS, OUTRO_SECONDS, Intro, Outro } from './labs/intro.jsx'
 import { Newsroom, useShow } from './labs/show.jsx'
 import { playSting } from './labs/sting.js'
 import { Lockup } from './labs/brand.jsx'
+import { hideBoot, setBootProgress } from './boot.js'
 import './labs/labs.css'
 
 // Highlight posters: time for the camera to reach the posters (when it isn't there yet), then
@@ -50,6 +51,11 @@ export default function App() {
   const [dragging, setDragging] = useState(false)
   const [shot, setShot] = useState('overview')
   const [infoOpen, setInfoOpen] = useState(false)
+  // false until the room has loaded and drawn its first frames; the loading screen covers it till then
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    if (ready) hideBoot()
+  }, [ready])
   // 'welcome' shows what the show is about and a Play button, 'playing' runs the programme once,
   // 'explore' shows the camera shots. Debug and ?channel= links go straight to exploring.
   const [stage, setStage] = useState(DEBUG || START_CHANNEL ? 'explore' : 'welcome')
@@ -251,6 +257,7 @@ export default function App() {
             onToggleTV={() => setTvOn((on) => !on)}
             lit={lit}
           />
+          <SceneReady onReady={() => setReady(true)} />
         </Suspense>
         {/* Stand-in for Blender's raytraced AO/GI: darkens corners, under furniture and wall joins.
             The composer turns off renderer tone mapping, so AgX is applied here instead. */}
@@ -260,9 +267,9 @@ export default function App() {
           <ToneMapping mode={ToneMappingMode.AGX} />
         </EffectComposer>
       </Canvas>
-      <Loader />
+      <BootProgress />
 
-      {stage === 'welcome' && (
+      {ready && stage === 'welcome' && (
         <div className="welcome">
           <Lockup layout="horizontal" tone="reverse" size={40} />
           <h1 className="welcome-lead">{ABOUT.lead}</h1>
@@ -282,12 +289,12 @@ export default function App() {
           </button>
         </div>
       )}
-      {stage === 'playing' && (
+      {ready && stage === 'playing' && (
         <button className="skip-button" onClick={() => setStage('explore')}>
           Explore the room
         </button>
       )}
-      {stage === 'explore' && (
+      {ready && stage === 'explore' && (
         <div className="shots">
           {Object.entries(SHOTS).filter(([, s]) => !s.hidden).map(([key, s]) => (
             <button key={key} className={key === shot ? 'active' : ''} onClick={() => pickShot(key)}>
@@ -327,13 +334,32 @@ export default function App() {
           highlighting={lit.length > 0}
         />
       )}
-      <button className="info-button" onClick={() => setInfoOpen(true)} aria-label="How this was made">
-        i
-      </button>
+      {ready && (
+        <button className="info-button" onClick={() => setInfoOpen(true)} aria-label="How this was made">
+          i
+        </button>
+      )}
       <InfoPanel open={infoOpen} onClose={() => setInfoOpen(false)} />
       {dragging && <div className="drop-hint">Drop to play on the TV</div>}
     </div>
   )
+}
+
+// Mounts beside the room inside its Suspense, so it runs once everything has loaded. It waits a
+// few frames more, while the first renders compile the shaders and the scene can stutter.
+function SceneReady({ onReady }) {
+  const frames = useRef(0)
+  useFrame(() => {
+    if (++frames.current === 4) onReady()
+  })
+  return null
+}
+
+// Moves the loading screen's bar with the room's downloads (model, textures).
+function BootProgress() {
+  const progress = useProgress((s) => s.progress)
+  useEffect(() => setBootProgress(progress / 100), [progress])
+  return null
 }
 
 // Light values ported from the Blender scene (linear colours; Blender watts -> three units:

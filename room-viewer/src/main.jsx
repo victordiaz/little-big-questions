@@ -6,7 +6,10 @@ import './styles.css'
 // Both are lazy so the labs pages don't download three.js and the viewer doesn't download the labs.
 const App = lazy(() => import('./App.jsx'))
 const Labs = lazy(() => import('./labs/Labs.jsx'))
-const Page = window.location.pathname.startsWith('/labs') ? Labs : App
+const isLabs = window.location.pathname.startsWith('/labs')
+const Page = isLabs ? Labs : App
+// the loading screen in index.html is the viewer's; the viewer hides it once the room is ready
+if (isLabs) document.getElementById('boot')?.remove()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

@@ -31,6 +31,136 @@
     />
   </head>
   <body>
+    <!-- Loading screen, shown before any JS arrives. App drives the bar (--p) and fades it out once
+         the room has loaded and rendered (src/boot.js). -->
+    <div id="boot" role="status" aria-label="Loading Little Big Questions">
+      <style>
+        #boot {
+          position: fixed;
+          inset: 0;
+          z-index: 20;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 22px;
+          background: radial-gradient(circle at 50% 42%, #4d4470 0%, #3b3456 55%, #2b2542 100%);
+          color: #fff6e6;
+          font-family: 'Fredoka', 'Nunito', system-ui, sans-serif;
+          transition: opacity 0.6s ease;
+        }
+        #boot.done {
+          opacity: 0;
+          pointer-events: none;
+        }
+        #boot .boot-mark {
+          width: 104px;
+          height: 182px;
+          overflow: visible;
+        }
+        #boot .boot-q {
+          transform-origin: 106px 150px;
+          animation: boot-wobble 1.6s ease-in-out infinite;
+        }
+        #boot .boot-globe {
+          animation: boot-bounce 0.8s cubic-bezier(0.5, 0, 0.5, 1) infinite alternate;
+        }
+        #boot .boot-shadow {
+          transform-origin: 100px 254px;
+          animation: boot-shadow 0.8s cubic-bezier(0.5, 0, 0.5, 1) infinite alternate;
+        }
+        #boot .boot-title {
+          margin: 0;
+          font-size: 26px;
+          font-weight: 600;
+          letter-spacing: 0.01em;
+        }
+        #boot .boot-title b {
+          color: #ffc93c;
+          font-weight: 700;
+        }
+        #boot .boot-bar {
+          width: min(220px, 60vw);
+          height: 8px;
+          border-radius: 999px;
+          background: rgba(255, 246, 230, 0.15);
+          overflow: hidden;
+        }
+        #boot .boot-bar i {
+          display: block;
+          height: 100%;
+          border-radius: inherit;
+          background: #ff6b5a;
+          transform-origin: left;
+          transform: scaleX(var(--p, 0.04));
+          transition: transform 0.4s ease;
+        }
+        #boot .boot-line {
+          min-height: 1.4em;
+          margin: -8px 0 0;
+          font-family: 'Nunito', system-ui, sans-serif;
+          font-size: 15px;
+          opacity: 0.75;
+        }
+        @keyframes boot-wobble {
+          0%, 100% { transform: rotate(-4deg); }
+          50% { transform: rotate(4deg); }
+        }
+        @keyframes boot-bounce {
+          from { transform: translate(100px, 200px); }
+          to { transform: translate(100px, 218px); }
+        }
+        @keyframes boot-shadow {
+          from { transform: scale(0.6); opacity: 0.15; }
+          to { transform: scale(1); opacity: 0.35; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          #boot * { animation: none !important; }
+        }
+      </style>
+      <!-- the logo mark (src/labs/brand.jsx): the question mark sways, its Earth dot bounces -->
+      <svg class="boot-mark" viewBox="30 0 150 262" aria-hidden="true">
+        <defs>
+          <clipPath id="boot-clip"><circle r="50" /></clipPath>
+          <radialGradient id="boot-shade" cx="35%" cy="30%" r="75%">
+            <stop offset="0" stop-color="#fff" stop-opacity="0.45" />
+            <stop offset="0.55" stop-color="#fff" stop-opacity="0" />
+            <stop offset="1" stop-color="#0b1b4a" stop-opacity="0.35" />
+          </radialGradient>
+        </defs>
+        <ellipse class="boot-shadow" cx="100" cy="254" rx="30" ry="6" fill="#000" />
+        <path class="boot-q" d="M52 70C52 34 80 16 108 16C142 16 160 40 160 66C160 92 140 104 122 114C106 123 100 134 100 152" fill="none" stroke="#ff6b5a" stroke-width="34" stroke-linecap="round" stroke-linejoin="round" />
+        <g class="boot-globe">
+          <g transform="scale(0.6)">
+            <circle r="50" fill="#3fa7f5" />
+            <g clip-path="url(#boot-clip)" fill="#7ed957">
+              <path d="M-40 -25q10-15 25-8q12 6 6 18q-8 10-2 22q4 12-10 10q-14-4-16-18q-2-10-3-24z" />
+              <path d="M5 -38q18-8 30 2q8 8-2 14q-12 4-20-2q-10-4-8-14z" />
+              <path d="M14 4q14-6 24 4q6 12-4 24q-10 8-18-2q-8-12-2-26z" />
+              <path d="M-30 30q12-2 16 6q-4 8-14 6q-6-4-2-12z" />
+            </g>
+            <circle r="50" fill="url(#boot-shade)" />
+            <ellipse cx="-14" cy="-4" rx="5" ry="7" fill="#1d2350" />
+            <ellipse cx="14" cy="-4" rx="5" ry="7" fill="#1d2350" />
+            <path d="M-10 12q10 10 20 0" fill="none" stroke="#1d2350" stroke-width="4" stroke-linecap="round" />
+          </g>
+        </g>
+      </svg>
+      <p class="boot-title">Little <b>Big</b> Questions</p>
+      <div class="boot-bar"><i></i></div>
+      <p class="boot-line">Tidying up the bedroom…</p>
+      <script>
+        ;(() => {
+          const lines = ['Tidying up the bedroom…', 'Warming up the TV…', 'Waking up Olive…', 'Checking the news…']
+          const el = document.querySelector('#boot .boot-line')
+          let i = 0
+          const timer = setInterval(() => {
+            if (!el.isConnected) return clearInterval(timer)
+            el.textContent = lines[++i % lines.length]
+          }, 1800)
+        })()
+      </script>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
